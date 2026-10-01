@@ -21,9 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Components\" />
-    <Folder Include="Games\Roulette\" />
-    <Folder Include="Services\" />
+    <Folder Include="Infrastructure\" />
   </ItemGroup>
 
 </Project>

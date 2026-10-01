@@ -1,5 +1,6 @@
-﻿using DesmondBot.Commands;
+﻿using DesmondBot.Features.Roulette.Application;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NetCord.Hosting.Gateway;
 using NetCord.Hosting.Services;
@@ -21,6 +22,8 @@ builder.Services.AddDiscordGateway(options =>
 })
 .AddApplicationCommands()
 .AddComponentInteractions();
+
+builder.Services.AddSingleton<RouletteGameService>();
 
 var host = builder.Build();
 
