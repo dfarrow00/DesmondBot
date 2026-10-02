@@ -16,8 +16,8 @@ public class RouletteCommandModule : ApplicationCommandModule<ApplicationCommand
 	[SlashCommand("roulette", "Start a new game of roulette")]
 	public async Task StartRoulette()
 	{
-		//Create game using service, send game to message builder
-		var message = RouletteMessageBuilder.Create();
+		var game = await _rouletteGameService.StartGameAsync();
+		var message = RouletteMessageBuilder.Create(game);
 		await Context.Interaction.SendResponseAsync(InteractionCallback.Message(message));
 	}
 }
