@@ -35,7 +35,7 @@ public static class RouletteMessageBuilder
 			{
 				new ActionRowProperties
 				{
-					new ButtonProperties("roulette:bet", "Place Bet", ButtonStyle.Primary)
+					new ButtonProperties("roulette-bet", "Place Bet", ButtonStyle.Primary)
 				}
 			};
 

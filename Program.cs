@@ -2,10 +2,12 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using NetCord;
 using NetCord.Hosting.Gateway;
 using NetCord.Hosting.Services;
 using NetCord.Hosting.Services.ApplicationCommands;
 using NetCord.Hosting.Services.ComponentInteractions;
+using NetCord.Services.ComponentInteractions;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -21,7 +23,7 @@ builder.Services.AddDiscordGateway(options =>
 	options.Token = token;
 })
 .AddApplicationCommands()
-.AddComponentInteractions();
+.AddComponentInteractions<ButtonInteraction, ButtonInteractionContext>();
 
 builder.Services.AddSingleton<RouletteGameService>();
 
