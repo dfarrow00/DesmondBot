@@ -9,39 +9,42 @@ public static class RouletteModalBuilder
 	{
 		return new ModalProperties("roulette-bet-submit", "Place Your Bet")
 		{
-			new LabelProperties("🪙 Amount",
+			new LabelProperties("\U0001FA99 Bet Amount",
 				new TextInputProperties("roulette:bet:amount", TextInputStyle.Short)
 				{
 					Placeholder = "500",
 					Required = true,
 					MinLength = 1,
 					MaxLength = 10
-				}),
+				})
+			{
+				Description = "Available balance: 1000"
+			},
 
 			 new LabelProperties("Bet Type",
-				new StringMenuProperties("roulette-bet-type",
-					[
+				new StringMenuProperties("roulette-bet-type", new[]
+					{
 						new StringMenuSelectOptionProperties(
-							"Red",
+							"Red - 2x payout",
 							"red")
 						{
-							Emoji = EmojiProperties.Standard("🔴")
+							Emoji = EmojiProperties.Standard("\U0001F534")
 						},
 
 						new StringMenuSelectOptionProperties(
-							"Black",
+							"Black - 2x payout",
 							"black")
 						{
-							Emoji = EmojiProperties.Standard("⚫")
+							Emoji = EmojiProperties.Standard("\U000026AB")
 						},
 
 						new StringMenuSelectOptionProperties(
-							"Number",
+							"Number - 36x payout",
 							"number")
 						{
-							Emoji = EmojiProperties.Standard("🔢")
+							Emoji = EmojiProperties.Standard("\U0001F522")
 						}
-					])
+					})
 				{
 					Placeholder = "Select a bet type",
 					MinValues = 1,
@@ -49,14 +52,17 @@ public static class RouletteModalBuilder
 					Required = true
 				}),
 
-			 new LabelProperties("🔢 Number (only for number bets)",
+			 new LabelProperties("\U0001F522 Number",
 				new TextInputProperties("roulette:bet:number", TextInputStyle.Short)
 				{
-					Placeholder = "0",
+					Placeholder = "0-36",
 					Required = false,
 					MinLength = 1,
 					MaxLength = 2
-				}),
+				})
+			{
+				Description = "Only required for number bets"
+			},
 		};
 	}
 }
