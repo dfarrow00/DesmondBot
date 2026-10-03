@@ -17,7 +17,7 @@ public static class RouletteMessageBuilder
 				{
 					new EmbedFieldProperties { Name = "Min Bet", Value = ":moneybag: 1", Inline = true },
 					new EmbedFieldProperties { Name = "Max Bet", Value = ":moneybag: 100,000", Inline = true },
-					new EmbedFieldProperties { Name = "Pot (so far)", Value = $":busts_in_silhouette: {game.Bets.Sum(b => b.Amount)}", Inline = true },
+					new EmbedFieldProperties { Name = "Pot", Value = $":busts_in_silhouette: {game.Bets.Sum(b => b.Amount)}", Inline = true },
 					new EmbedFieldProperties
 					{
 						Name = $"Current Bets ({game.Bets.Count})",

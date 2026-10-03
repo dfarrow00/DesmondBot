@@ -1,5 +1,4 @@
 ﻿using DesmondBot.Features.Roulette.Application;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NetCord;
@@ -10,20 +9,15 @@ using NetCord.Hosting.Services.ComponentInteractions;
 using NetCord.Services.ComponentInteractions;
 
 var builder = Host.CreateApplicationBuilder(args);
-
-var configuration = new ConfigurationBuilder()
-	.SetBasePath(AppContext.BaseDirectory)
-	.AddJsonFile("appsettings.json", optional: false)
-	.Build();
-
-string token = configuration["Discord:Token"] ?? throw new Exception("Discord bot token not found in configuration");
+var token = builder.Configuration["Discord:Token"] ?? throw new InvalidOperationException("Discord bot token not found in configuration");
 
 builder.Services.AddDiscordGateway(options =>
 {
 	options.Token = token;
 })
 .AddApplicationCommands()
-.AddComponentInteractions<ButtonInteraction, ButtonInteractionContext>();
+.AddComponentInteractions<ButtonInteraction, ButtonInteractionContext>()
+.AddComponentInteractions<ModalInteraction, ModalInteractionContext>();
 
 builder.Services.AddSingleton<RouletteGameService>();
 

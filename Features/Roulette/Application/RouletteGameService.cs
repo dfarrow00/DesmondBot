@@ -18,8 +18,11 @@ public class RouletteGameService
 		return _activeGame;
 	}
 
-	//public async Task PlaceBetAsync()
-	//{
-	//	// Validate and add bet
-	//}
+	public async Task PlaceBetAsync(ulong userId, int amount, RouletteBetType betType, int? number)
+	{
+		// Get user balance
+		//Check user has enough funds for bet
+		//Create and place bet
+		//Notify user
+	}
 }

@@ -1,4 +1,6 @@
 ﻿using DesmondBot.Features.Roulette.Application;
+using DesmondBot.Features.Roulette.Domain;
+using NetCord;
 using NetCord.Rest;
 using NetCord.Services.ComponentInteractions;
 
@@ -16,6 +18,7 @@ public class RouletteComponentModule : ComponentInteractionModule<ButtonInteract
 	[ComponentInteraction("roulette-bet")]
 	public async Task OpenBetModalAsync()
 	{
+		//Get user balance and pass to builder
 		await RespondAsync(InteractionCallback.Modal(RouletteModalBuilder.Create()));
 	}
 }
