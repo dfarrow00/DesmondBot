@@ -1,4 +1,5 @@
-﻿using DesmondBot.Features.Roulette.Application;
+﻿using DesmondBot.Features.Economy.Application;
+using DesmondBot.Features.Roulette.Application;
 using DesmondBot.Infrastructure.Persistence.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -8,6 +9,7 @@ using NetCord.Hosting.Services;
 using NetCord.Hosting.Services.ApplicationCommands;
 using NetCord.Hosting.Services.ComponentInteractions;
 using NetCord.Services.ComponentInteractions;
+using NetCord.Gateway;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -17,15 +19,19 @@ var databasePath = Path.Combine(builder.Environment.ContentRootPath,"Data","desm
 builder.Services.AddDiscordGateway(options =>
 {
 	options.Token = token;
+	options.Intents = GatewayIntents.Guilds | GatewayIntents.GuildUsers | GatewayIntents.GuildPresences;
 })
 .AddApplicationCommands()
 .AddComponentInteractions<ButtonInteraction, ButtonInteractionContext>()
-.AddComponentInteractions<ModalInteraction, ModalInteractionContext>();
+.AddComponentInteractions<ModalInteraction, ModalInteractionContext>()
+.AddGatewayHandlers(typeof(Program).Assembly);
 
 builder.Services.AddSingleton(new SqliteConnectionFactory(databasePath));
 builder.Services.AddSingleton<SqliteDatabaseInitializer>();
 
 builder.Services.AddSingleton<RouletteGameService>();
+builder.Services.AddSingleton<IEconomyRepository, SqliteEconomyRepository>();
+builder.Services.AddSingleton<EconomyService>();
 
 var host = builder.Build();
 
