@@ -62,4 +62,22 @@ public class SqliteEconomyRepository : IEconomyRepository
 
 		await transaction.CommitAsync();
 	}
+
+	public async Task<int> GetBalanceAsync(ulong userId)
+	{
+		await using var connection = _connectionFactory.CreateConnection();
+		await connection.OpenAsync();
+
+		await using var command = connection.CreateCommand();
+		command.CommandText = @"
+            SELECT Balance
+			FROM UserBalances
+			WHERE UserId = @userId;
+            ";
+
+		command.Parameters.AddWithValue("@userId", userId);
+
+		var result = await command.ExecuteScalarAsync();
+		return Convert.ToInt32(result);
+	}
 }
