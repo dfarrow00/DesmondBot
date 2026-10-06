@@ -80,4 +80,22 @@ public class SqliteEconomyRepository : IEconomyRepository
 		var result = await command.ExecuteScalarAsync();
 		return Convert.ToInt32(result);
 	}
+
+	public async Task RemoveBalanceAsync(ulong userId, int amount)
+	{
+		await using var connection = _connectionFactory.CreateConnection();
+		await connection.OpenAsync();
+
+		await using var command = connection.CreateCommand();
+		command.CommandText = @"
+			UPDATE UserBalances
+			SET Balance = Balance - @amount
+			WHERE UserId = @userId;
+			";
+
+		command.Parameters.AddWithValue("@userId", userId);
+		command.Parameters.AddWithValue("@amount", amount);
+
+		await command.ExecuteNonQueryAsync();
+	}
 }

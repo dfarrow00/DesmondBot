@@ -6,7 +6,7 @@ namespace DesmondBot.Features.Roulette.Discord;
 
 public static class RouletteModalBuilder
 {
-	public static ModalProperties Create()
+	public static ModalProperties Create(int balance)
 	{
 		return new ModalProperties("roulette-bet-submit", "Place Your Bet")
 		{
@@ -19,7 +19,7 @@ public static class RouletteModalBuilder
 					MaxLength = 6
 				})
 			{
-				Description = "Available balance: 1000"
+				Description = $"Available balance: {balance}"
 			},
 
 			 new LabelProperties("Bet Type",

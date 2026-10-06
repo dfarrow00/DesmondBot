@@ -18,4 +18,15 @@ public class EconomyService
 	{
 		await _economyRepository.AddUsersAsync(userIds);
 	}
+
+	public async Task<int> GetBalanceAsync(ulong userId)
+	{
+		//Improvement: If user doesnt exist in db, create first. Could cache result to minimize unnecessary reads
+		return await _economyRepository.GetBalanceAsync(userId);
+	}
+
+	public async Task RemoveBalanceAsync(ulong userId, int amount)
+	{
+		await _economyRepository.RemoveBalanceAsync(userId, amount);
+	}
 }
