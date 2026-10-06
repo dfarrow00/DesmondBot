@@ -1,4 +1,6 @@
 ﻿using DesmondBot.Features.Roulette.Application;
+using NetCord;
+using NetCord.Gateway;
 using NetCord.Rest;
 using NetCord.Services.ApplicationCommands;
 
@@ -18,6 +20,16 @@ public class RouletteCommandModule : ApplicationCommandModule<ApplicationCommand
 	[SlashCommand("roulette", "Start a new game of roulette")]
 	public async Task StartRoulette()
 	{
+		if (_rouletteGameService.HasActiveGame())
+		{
+			await RespondAsync(InteractionCallback.Message(new InteractionMessageProperties
+			{
+				Content = ":exclamation: A roulette game is already running",
+				Flags = MessageFlags.Ephemeral
+			}));
+			return;
+		}
+
 		var game = _rouletteGameService.StartGame();
 		var message = RouletteMessageBuilder.Create(game);
 		await Context.Interaction.SendResponseAsync(InteractionCallback.Message(message));

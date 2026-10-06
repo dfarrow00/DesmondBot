@@ -38,4 +38,24 @@ public class RouletteMessageService
 				];
 			});
 	}
+
+	public async Task UpdateMessageBettingClosedAsync(RouletteGame game)
+	{
+		if (_channelId is null || _messageId is null)
+		{
+			throw new InvalidOperationException("No active roulette message is registered.");
+		}
+
+		await _restClient.ModifyMessageAsync(
+			_channelId.Value,
+			_messageId.Value,
+			options =>
+			{
+				options.Embeds =
+				[
+					RouletteMessageBuilder.CreateBettingClosedEmbed(game)
+				];
+				options.Components = [];
+			});
+	}
 }

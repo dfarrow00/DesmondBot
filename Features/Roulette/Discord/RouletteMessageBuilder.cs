@@ -49,6 +49,30 @@ public static class RouletteMessageBuilder
 		};
 	}
 
+	public static EmbedProperties CreateBettingClosedEmbed(RouletteGame game)
+	{
+		return new EmbedProperties
+		{
+			Title = $":slot_machine: Roulette #{game.Id}",
+			Description = ":no_entry_sign: Bets are now closed.\n\n:cyclone: The wheel is spinning...",
+			Color = new Color(0xFF3B3B),
+			Fields = new List<EmbedFieldProperties>
+			{
+				new EmbedFieldProperties { Name = "Pot", Value = $":moneybag: {game.Bets.Sum(b => b.Amount)}", Inline = true },
+				new EmbedFieldProperties
+				{
+					Name = $"Final Bets ({game.Bets.Count})",
+					Value = GetPlacedBetsString(game.Bets),
+					Inline = false
+				}
+			},
+			Footer = new EmbedFooterProperties
+			{
+				Text = "No more bets can be placed.",
+			}
+		};
+	}
+
 	private static string GetPlacedBetsString(List<RouletteBet> bets)
 	{
 		var output = "";

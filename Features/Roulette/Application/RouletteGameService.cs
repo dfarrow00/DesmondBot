@@ -1,4 +1,5 @@
 ﻿using DesmondBot.Features.Economy.Application;
+using DesmondBot.Features.Roulette.Discord;
 using DesmondBot.Features.Roulette.Domain;
 
 namespace DesmondBot.Features.Roulette.Application;
@@ -7,20 +8,18 @@ public class RouletteGameService
 {
 	private RouletteGame? _activeGame;
 	private readonly EconomyService _economyService;
+	private readonly RouletteMessageService _rouletteMessageService;
 
-	public RouletteGameService(EconomyService economyService)
+	public RouletteGameService(EconomyService economyService, RouletteMessageService rouletteMessageService)
 	{
 		_economyService = economyService;
+		_rouletteMessageService = rouletteMessageService;
 	}
 
 	public RouletteGame StartGame()
 	{
-		if (_activeGame != null)
-		{
-			throw new InvalidOperationException("Cannot start roulette, another game is already running");
-		}
-
 		_activeGame = new RouletteGame(1, DateTimeOffset.UtcNow.AddSeconds(32));
+		ScheduleBettingClosed(_activeGame);
 
 		return _activeGame;
 	}
@@ -51,7 +50,7 @@ public class RouletteGameService
 	{
 		if (_activeGame == null) return PlaceBetResult.NoActiveGame;
 
-		if (DateTimeOffset.UtcNow > _activeGame.BettingCloseTime) return PlaceBetResult.BettingClosed;
+		if (DateTimeOffset.UtcNow >= _activeGame.BettingCloseTime) return PlaceBetResult.BettingClosed;
 
 		if (_activeGame.Bets.Any(b => b.UserId == bet.UserId)) return PlaceBetResult.AlreadyBet;
 
@@ -69,8 +68,23 @@ public class RouletteGameService
 		return PlaceBetResult.Success;
 	}
 
+	public bool HasActiveGame()
+	{
+		return _activeGame != null;
+	}
+
 	public RouletteGame GetActiveGame()
 	{
 		return _activeGame ?? throw new InvalidOperationException("No active roulette game.");
+	}
+
+	private void ScheduleBettingClosed(RouletteGame game)
+	{
+		_ = Task.Run(async () =>
+		{
+			var delay = game.BettingCloseTime - DateTimeOffset.UtcNow;
+			await Task.Delay(delay);
+			await _rouletteMessageService.UpdateMessageBettingClosedAsync(game);
+		});
 	}
 }
