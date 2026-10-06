@@ -1,5 +1,6 @@
 ﻿using DesmondBot.Features.Economy.Application;
 using DesmondBot.Features.Roulette.Application;
+using DesmondBot.Features.Roulette.Discord;
 using DesmondBot.Infrastructure.Persistence.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -30,6 +31,7 @@ builder.Services.AddSingleton(new SqliteConnectionFactory(databasePath));
 builder.Services.AddSingleton<SqliteDatabaseInitializer>();
 
 builder.Services.AddSingleton<RouletteGameService>();
+builder.Services.AddSingleton<RouletteMessageService>();
 builder.Services.AddSingleton<IEconomyRepository, SqliteEconomyRepository>();
 builder.Services.AddSingleton<EconomyService>();
 

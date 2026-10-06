@@ -32,9 +32,9 @@ public static class RouletteMessageBuilder
 			Color = new Color(0xFF3B3B),
 			Fields = new List<EmbedFieldProperties>
 			{
-				new EmbedFieldProperties { Name = "Min Bet", Value = ":moneybag: 1", Inline = true },
-				new EmbedFieldProperties { Name = "Max Bet", Value = ":moneybag: 100,000", Inline = true },
-				new EmbedFieldProperties { Name = "Pot", Value = $":busts_in_silhouette: {game.Bets.Sum(b => b.Amount)}", Inline = true },
+				new EmbedFieldProperties { Name = "Min Bet", Value = ":coin: 1", Inline = true },
+				new EmbedFieldProperties { Name = "Max Bet", Value = ":coin: 100k", Inline = true },
+				new EmbedFieldProperties { Name = "Pot", Value = $":moneybag: {game.Bets.Sum(b => b.Amount)}", Inline = true },
 				new EmbedFieldProperties
 				{
 					Name = $"Current Bets ({game.Bets.Count})",
@@ -70,7 +70,7 @@ public static class RouletteMessageBuilder
 					throw new Exception($"Invalid roulette bet type {(int)bet.Type}");
 			}
 
-			output += $"• <@{bet.UserId}> - :moneybag: {bet.Amount} - {betTypeString}\n";
+			output += $"• <@{bet.UserId}> - {betTypeString} - :coin: {bet.Amount}\n";
 		}
 
 		return output;

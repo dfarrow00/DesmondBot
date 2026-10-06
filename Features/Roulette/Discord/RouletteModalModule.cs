@@ -1,20 +1,20 @@
 ﻿using DesmondBot.Features.Roulette.Application;
 using DesmondBot.Features.Roulette.Domain;
 using NetCord;
-using NetCord.Gateway;
 using NetCord.Rest;
 using NetCord.Services.ComponentInteractions;
-using System.Threading.Channels;
 
 namespace DesmondBot.Features.Roulette.Discord;
 
 public class RouletteModalModule : ComponentInteractionModule<ModalInteractionContext>
 {
 	private readonly RouletteGameService _rouletteGameService;
+	private readonly RouletteMessageService _rouletteMessageService;
 
-	public RouletteModalModule(RouletteGameService rouletteGameService)
+	public RouletteModalModule(RouletteGameService rouletteGameService, RouletteMessageService rouletteMessageService)
 	{
 		_rouletteGameService = rouletteGameService;
+		_rouletteMessageService = rouletteMessageService;
 	}
 
 	[ComponentInteraction("roulette-bet-submit")]
@@ -69,12 +69,16 @@ public class RouletteModalModule : ComponentInteractionModule<ModalInteractionCo
 		}
 
 		var result = await _rouletteGameService.PlaceBetAsync(userId, amount, betType, number);
-		await RespondEphemeralAsync(GetResultMessage(result));
 
 		if (result == PlaceBetResult.Success)
 		{
-			_rouletteGameService.UpdateMessageAsync();
+			var game = _rouletteGameService.GetActiveGame();
+			await _rouletteMessageService.UpdateMessageAsync(game);
+			await Context.Interaction.SendResponseAsync(InteractionCallback.DeferredModifyMessage);
+			return;
 		}
+
+		await RespondEphemeralAsync(GetResultMessage(result));
 	}
 
 	private Task RespondEphemeralAsync(string message)
@@ -90,15 +94,14 @@ public class RouletteModalModule : ComponentInteractionModule<ModalInteractionCo
 	{
 		return result switch
 		{
-			PlaceBetResult.Success => "Bet placed successfully",
-			PlaceBetResult.InsufficientBalance => "Failed to place bet: Insufficient balance",
-			PlaceBetResult.BettingClosed => "Failed to place bet: Betting is closed",
-			PlaceBetResult.NoActiveGame => "Failed to place bet: No active roulette game",
-			PlaceBetResult.AlreadyBet => "Failed to place bet: You already placed a bet for this game",
-			PlaceBetResult.InvalidAmount => "Failed to place bet: Amount must be greater than zero",
-			PlaceBetResult.NumberRequired => "Failed to place bet: Number bet requires a number",
-			PlaceBetResult.InvalidNumber => "Failed to place bet: Number must be between 0 and 36",
-			_ => "Failed to place bet"
+			PlaceBetResult.InsufficientBalance => ":exclamation: Insufficient balance",
+			PlaceBetResult.BettingClosed => ":exclamation: Betting is closed",
+			PlaceBetResult.NoActiveGame => ":exclamation: No active roulette game",
+			PlaceBetResult.AlreadyBet => ":exclamation: You already placed a bet for this game",
+			PlaceBetResult.InvalidAmount => ":exclamation: Amount must be greater than zero",
+			PlaceBetResult.NumberRequired => ":exclamation: Number bet requires a number",
+			PlaceBetResult.InvalidNumber => ":exclamation: Number must be between 0 and 36",
+			_ => ":exclamation: Failed to place bet"
 		};
 	}
 }

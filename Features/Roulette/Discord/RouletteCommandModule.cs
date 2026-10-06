@@ -7,10 +7,12 @@ namespace DesmondBot.Features.Roulette.Discord;
 public class RouletteCommandModule : ApplicationCommandModule<ApplicationCommandContext>
 {
 	private readonly RouletteGameService _rouletteGameService;
+	private readonly RouletteMessageService _rouletteMessageService;
 
-	public RouletteCommandModule(RouletteGameService rouletteGameService)
+	public RouletteCommandModule(RouletteGameService rouletteGameService, RouletteMessageService rouletteMessageService)
 	{
 		_rouletteGameService = rouletteGameService;
+		_rouletteMessageService = rouletteMessageService;
 	}
 
 	[SlashCommand("roulette", "Start a new game of roulette")]
@@ -24,6 +26,6 @@ public class RouletteCommandModule : ApplicationCommandModule<ApplicationCommand
 		var messageId = response.Id;
 		var channelId = response.ChannelId;
 
-		_rouletteGameService.RegisterMessage(channelId, messageId);
+		_rouletteMessageService.RegisterMessage(channelId, messageId);
 	}
 }

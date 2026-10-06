@@ -1,8 +1,5 @@
 ﻿using DesmondBot.Features.Economy.Application;
-using DesmondBot.Features.Roulette.Discord;
 using DesmondBot.Features.Roulette.Domain;
-using NetCord.Gateway;
-using NetCord.Rest;
 
 namespace DesmondBot.Features.Roulette.Application;
 
@@ -10,14 +7,10 @@ public class RouletteGameService
 {
 	private RouletteGame? _activeGame;
 	private readonly EconomyService _economyService;
-	private ulong? _channelId;
-	private ulong? _messageId;
-	private readonly RestClient _restClient;
 
-	public RouletteGameService(EconomyService economyService, RestClient restClient)
+	public RouletteGameService(EconomyService economyService)
 	{
 		_economyService = economyService;
-		_restClient = restClient;
 	}
 
 	public RouletteGame StartGame()
@@ -76,29 +69,8 @@ public class RouletteGameService
 		return PlaceBetResult.Success;
 	}
 
-	public void RegisterMessage(ulong channelId, ulong messageId)
+	public RouletteGame GetActiveGame()
 	{
-		_channelId = channelId;
-		_messageId = messageId;
-	}
-
-	//TODO maybe move this into a message service or something
-	public async Task UpdateMessageAsync()
-	{
-		if (_activeGame is null || _channelId is null || _messageId is null)
-		{
-			throw new InvalidOperationException("No active roulette message is registered.");
-		}
-
-		await _restClient.ModifyMessageAsync(
-			_channelId.Value,
-			_messageId.Value,
-			options =>
-			{
-				options.Embeds =
-				[
-					RouletteMessageBuilder.CreateEmbed(_activeGame)
-				];
-			});
+		return _activeGame ?? throw new InvalidOperationException("No active roulette game.");
 	}
 }
