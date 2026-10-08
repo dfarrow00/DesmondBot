@@ -6,15 +6,15 @@ namespace DesmondBot.Features.Economy.Discord;
 
 public class EconomyGuildUserAddHandler : IGuildUserAddGatewayHandler
 {
-	private readonly EconomyService _economyService;
+	private readonly IEconomyRepository _economyRepository;
 
-	public EconomyGuildUserAddHandler(EconomyService economyService)
+	public EconomyGuildUserAddHandler(IEconomyRepository economyRepository)
 	{
-		_economyService = economyService;
+		_economyRepository = economyRepository;
 	}
 
 	public async ValueTask HandleAsync(GuildUser user)
 	{
-		await _economyService.AddUserAsync(user.Id);
+		await _economyRepository.AddUserAsync(user.Id);
 	}
 }

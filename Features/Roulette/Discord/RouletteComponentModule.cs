@@ -9,18 +9,18 @@ namespace DesmondBot.Features.Roulette.Discord;
 public class RouletteComponentModule : ComponentInteractionModule<ButtonInteractionContext>
 {
 	private readonly RouletteGameService _rouletteGameService;
-	private readonly EconomyService _economyService;
+	private readonly IEconomyRepository _economyRepository;
 
-	public RouletteComponentModule(RouletteGameService rouletteGameService, EconomyService economyService)
+	public RouletteComponentModule(RouletteGameService rouletteGameService, IEconomyRepository economyRepository)
 	{
 		_rouletteGameService = rouletteGameService;
-		_economyService = economyService;
+		_economyRepository = economyRepository;
 	}
 
 	[ComponentInteraction("roulette-bet")]
 	public async Task OpenBetModalAsync()
 	{
-		var balance = await _economyService.GetBalanceAsync(Context.User.Id);
+		var balance = await _economyRepository.GetBalanceAsync(Context.User.Id);
 		await RespondAsync(InteractionCallback.Modal(RouletteModalBuilder.Create(balance)));
 	}
 }

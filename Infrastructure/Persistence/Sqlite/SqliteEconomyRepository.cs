@@ -98,4 +98,22 @@ public class SqliteEconomyRepository : IEconomyRepository
 
 		await command.ExecuteNonQueryAsync();
 	}
+
+	public async Task AddBalanceAsync(ulong userId, int amount)
+	{
+		await using var connection = _connectionFactory.CreateConnection();
+		await connection.OpenAsync();
+
+		await using var command = connection.CreateCommand();
+		command.CommandText = @"
+			UPDATE UserBalances
+			SET Balance = Balance + @amount
+			WHERE UserId = @userId;
+			";
+
+		command.Parameters.AddWithValue("@userId", userId);
+		command.Parameters.AddWithValue("@amount", amount);
+
+		await command.ExecuteNonQueryAsync();
+	}
 }

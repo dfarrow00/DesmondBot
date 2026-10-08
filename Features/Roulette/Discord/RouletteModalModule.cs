@@ -73,7 +73,7 @@ public class RouletteModalModule : ComponentInteractionModule<ModalInteractionCo
 		if (result == PlaceBetResult.Success)
 		{
 			var game = _rouletteGameService.GetActiveGame();
-			await _rouletteMessageService.UpdateMessageAsync(game);
+			await _rouletteMessageService.UpdateStartMessageAsync(game);
 			await Context.Interaction.SendResponseAsync(InteractionCallback.DeferredModifyMessage);
 			return;
 		}

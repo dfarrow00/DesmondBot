@@ -20,23 +20,26 @@ public class RouletteMessageService
 		_messageId = messageId;
 	}
 
-	public async Task UpdateMessageAsync(RouletteGame game)
+	public void ResetMessage()
+	{
+		_channelId = null;
+		_messageId = null;
+	}
+
+	public async Task UpdateStartMessageAsync(RouletteGame game)
 	{
 		if (_channelId is null || _messageId is null)
 		{
 			throw new InvalidOperationException("No active roulette message is registered.");
 		}
 
-		await _restClient.ModifyMessageAsync(
-			_channelId.Value,
-			_messageId.Value,
-			options =>
-			{
-				options.Embeds =
-				[
-					RouletteMessageBuilder.CreateEmbed(game)
-				];
-			});
+		await _restClient.ModifyMessageAsync(_channelId.Value, _messageId.Value, options =>
+		{
+			options.Embeds =
+			[
+				RouletteMessageBuilder.CreateStartEmbed(game)
+			];
+		});
 	}
 
 	public async Task UpdateMessageBettingClosedAsync(RouletteGame game)
@@ -46,16 +49,29 @@ public class RouletteMessageService
 			throw new InvalidOperationException("No active roulette message is registered.");
 		}
 
-		await _restClient.ModifyMessageAsync(
-			_channelId.Value,
-			_messageId.Value,
-			options =>
-			{
-				options.Embeds =
-				[
-					RouletteMessageBuilder.CreateBettingClosedEmbed(game)
-				];
-				options.Components = [];
-			});
+		await _restClient.ModifyMessageAsync(_channelId.Value, _messageId.Value, options =>
+		{
+			options.Embeds =
+			[
+				RouletteMessageBuilder.CreateBettingClosedEmbed(game)
+			];
+			options.Components = [];
+		});
+	}
+
+	public async Task UpdateMessageResultAsync(RouletteGame game, RouletteResult resultDisplay)
+	{
+		if (_channelId is null || _messageId is null)
+		{
+			throw new InvalidOperationException("No active roulette message is registered.");
+		}
+
+		await _restClient.ModifyMessageAsync(_channelId.Value, _messageId.Value ,options =>
+		{
+			options.Embeds =
+			[
+				RouletteMessageBuilder.CreateResultEmbed(game, resultDisplay)
+			];
+		});
 	}
 }

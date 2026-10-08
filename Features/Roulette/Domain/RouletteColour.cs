@@ -3,5 +3,6 @@
 public enum RouletteColour
 {
 	Red,
-	Black
+	Black,
+	Green
 }
