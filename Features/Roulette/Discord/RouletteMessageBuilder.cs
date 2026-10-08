@@ -73,119 +73,92 @@ public static class RouletteMessageBuilder
 		};
 	}
 
-	public static EmbedProperties CreateResultEmbed(RouletteGame game, RouletteResult resultDisplay)
+	public static EmbedProperties CreateResultEmbed(RouletteGame game, RouletteResult rouletteResult)
 	{
-		var result = resultDisplay.Result;
-		var colourEmoji = result.Colour == RouletteColour.Red ? ":red_circle:" : ":black_circle:";
+		var result = rouletteResult.Result;
+		var colourEmoji = result.Colour switch
+		{
+			RouletteColour.Red => ":red_circle:",
+			RouletteColour.Black => ":black_circle:",
+			RouletteColour.Green => ":green_circle:",
+			_ => throw new Exception($"Invalid roulette colour {(int)result.Colour}"),
+		};
+
+		var betResultFields = new List<EmbedFieldProperties>();
+		if (rouletteResult.WinningBets.Count > 0)
+		{
+			betResultFields.Add(new EmbedFieldProperties
+			{
+				Name = $":trophy: Winners ({rouletteResult.WinningBets.Count})",
+				Value = GetWinningBetsString(rouletteResult.WinningBets),
+				Inline = false
+			});
+		}
+
+		if (rouletteResult.LosingBets.Count > 0)
+		{
+			betResultFields.Add(new EmbedFieldProperties
+			{
+				Name = $":skull: Losers ({rouletteResult.LosingBets.Count})",
+				Value = GetLosingBetsString(rouletteResult.LosingBets),
+				Inline = false
+			});
+		}
 
 		return new EmbedProperties
 		{
 			Title = $":slot_machine: Roulette #{game.Id}",
-			Description = $"The wheel has landed on **{colourEmoji} {result.Number}**",
+			Description = $"The wheel has landed on: \u2003**{colourEmoji} {result.Number}**",
 			Color = new Color(0xFF3B3B),
-			Fields = new List<EmbedFieldProperties>
-			{
-				new EmbedFieldProperties
-				{
-					Name = $"Winners ({resultDisplay.WinningBets.Count})",
-					Value = GetWinningBetsString(resultDisplay.WinningBets),
-					Inline = false
-				},
-				new EmbedFieldProperties
-				{
-					Name = $"Losers ({resultDisplay.LosingBets.Count})",
-					Value = GetLosingBetsString(resultDisplay.LosingBets),
-					Inline = false
-				}
-			}
+			Fields = betResultFields
 		};
 	}
 
 	private static string GetPlacedBetsString(List<RouletteBet> bets)
 	{
-		var output = "";
-		foreach (var bet in bets)
-		{
-			string betTypeString;
-			switch (bet.Type)
-			{
-				case RouletteBetType.Red:
-					betTypeString = ":red_circle: Red";
-					break;
-				case RouletteBetType.Black:
-					betTypeString = ":black_circle: Black";
-					break;
-				case RouletteBetType.Number:
-					betTypeString = $":1234: {bet.Number}";
-					break;
-				default:
-					throw new Exception($"Invalid roulette bet type {(int)bet.Type}");
-			}
-
-			output += $"• <@{bet.UserId}> - {betTypeString} - :coin: {bet.Amount}\n";
-		}
-
-		return output;
+		return bets.Count == 0
+			? "None"
+			: string.Join("", bets.Select(FormatPlacedBetLine));
 	}
 
 	private static string GetWinningBetsString(List<RouletteBetWithPayout> bets)
 	{
-		if (bets.Count == 0)
-			return "None";
-
-		var output = "";
-		foreach (var betWithPayout in bets)
-		{
-			var bet = betWithPayout.Bet;
-			string betTypeString;
-			switch (bet.Type)
-			{
-				case RouletteBetType.Red:
-					betTypeString = ":red_circle: Red";
-					break;
-				case RouletteBetType.Black:
-					betTypeString = ":black_circle: Black";
-					break;
-				case RouletteBetType.Number:
-					betTypeString = $":1234: {bet.Number}";
-					break;
-				default:
-					throw new Exception($"Invalid roulette bet type {(int)bet.Type}");
-			}
-
-			output += $"• <@{bet.UserId}> - {betTypeString} - :coin: +{betWithPayout.Payout}\n";
-		}
-
-		return output;
+		return bets.Count == 0
+			? "None"
+			: string.Join("", bets.Select(FormatWinningBetLine));
 	}
 
 	private static string GetLosingBetsString(List<RouletteBet> bets)
 	{
-		if (bets.Count == 0)
-			return "None";
+		return bets.Count == 0
+			? "None"
+			: string.Join("", bets.Select(FormatLosingBetLine));
+	}
 
-		var output = "";
-		foreach (var bet in bets)
+	private static string FormatBetType(RouletteBet bet)
+	{
+		return bet.Type switch
 		{
-			string betTypeString;
-			switch (bet.Type)
-			{
-				case RouletteBetType.Red:
-					betTypeString = ":red_circle: Red";
-					break;
-				case RouletteBetType.Black:
-					betTypeString = ":black_circle: Black";
-					break;
-				case RouletteBetType.Number:
-					betTypeString = $":1234: {bet.Number}";
-					break;
-				default:
-					throw new Exception($"Invalid roulette bet type {(int)bet.Type}");
-			}
+			RouletteBetType.Red => ":red_circle: Red",
+			RouletteBetType.Black => ":black_circle: Black",
+			RouletteBetType.Number => $":1234: {bet.Number}",
+			_ => throw new Exception($"Invalid roulette bet type {(int)bet.Type}"),
+		};
+	}
 
-			output += $"• <@{bet.UserId}> - {betTypeString} - :coin: -{bet.Amount}\n";
-		}
+	private static string FormatPlacedBetLine(RouletteBet bet)
+	{
+		return $"<@{bet.UserId}>\u2003-\u2003{FormatBetType(bet)}\u2003-\u2003:coin: {bet.Amount}\n";
+	}
 
-		return output;
+	private static string FormatWinningBetLine(RouletteBetWithPayout betWithPayout)
+	{
+		var bet = betWithPayout.Bet;
+		return $"<@{bet.UserId}>\u2003-\u2003{FormatBetType(bet)}\u2003-\u2003:coin: +{betWithPayout.Payout}\n";
+	}
+
+	private static string FormatLosingBetLine(RouletteBet bet)
+	{
+		return $"<@{bet.UserId}>\u2003-\u2003{FormatBetType(bet)}\u2003-\u2003:coin: -{bet.Amount}\n";
 	}
 }
