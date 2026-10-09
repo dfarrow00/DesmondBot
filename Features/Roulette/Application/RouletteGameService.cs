@@ -10,6 +10,7 @@ public class RouletteGameService
 	private readonly IEconomyRepository _economyRepository;
 	private readonly RouletteMessageService _rouletteMessageService;
 	private readonly Random _random = new();
+	private readonly SemaphoreSlim _betPlacementLock = new(1, 1);
 
 	public RouletteGameService(IEconomyRepository economyRepository, RouletteMessageService rouletteMessageService)
 	{
@@ -27,43 +28,65 @@ public class RouletteGameService
 
 	public async Task<PlaceBetResult> PlaceBetAsync(ulong userId, int amount, RouletteBetType betType, int? number)
 	{
-		var bet = new RouletteBet
+		if (_activeGame == null)
 		{
-			UserId = userId,
-			Amount = amount,
-			Type = betType,
-			Number = number
-		};
-
-		var validationResult = await ValidateBetAsync(bet);
-		if (validationResult != PlaceBetResult.Success)
-		{
-			return validationResult;
+			return PlaceBetResult.NoActiveGame;
 		}
 
-		await _economyRepository.RemoveBalanceAsync(userId, amount);
-		_activeGame!.Bets.Add(bet);
+		await _betPlacementLock.WaitAsync();
+		try
+		{
+			var bet = new RouletteBet
+			{
+				UserId = userId,
+				Amount = amount,
+				Type = betType,
+				Number = number
+			};
 
-		return PlaceBetResult.Success;
+			var validationResult = ValidateBet(bet);
+			if (validationResult != PlaceBetResult.Success)
+			{
+				return validationResult;
+			}
 
-		async Task<PlaceBetResult> ValidateBetAsync(RouletteBet bet)
+			var debited = await _economyRepository.TryRemoveBalanceAsync(userId, amount);
+			if (!debited)
+			{
+				return PlaceBetResult.InsufficientBalance;
+			}
+
+			try
+			{
+				_activeGame.Bets.Add(bet);
+				return PlaceBetResult.Success;
+			}
+			catch
+			{
+				await _economyRepository.AddBalanceAsync(userId, amount);
+				return PlaceBetResult.NoActiveGame;
+			}
+		}
+		finally
+		{
+			_betPlacementLock.Release();
+		}
+
+		PlaceBetResult ValidateBet(RouletteBet validatedBet)
 		{
 			if (_activeGame == null) return PlaceBetResult.NoActiveGame;
 
 			if (DateTimeOffset.UtcNow >= _activeGame.BettingCloseTime) return PlaceBetResult.BettingClosed;
 
-			if (_activeGame.Bets.Any(b => b.UserId == bet.UserId)) return PlaceBetResult.AlreadyBet;
+			if (_activeGame.Bets.Any(b => b.UserId == validatedBet.UserId)) return PlaceBetResult.AlreadyBet;
 
-			if (bet.Amount <= 0) return PlaceBetResult.InvalidAmount;
+			if (validatedBet.Amount <= 0) return PlaceBetResult.InvalidAmount;
 
-			if (bet.Type == RouletteBetType.Number)
+			if (validatedBet.Type == RouletteBetType.Number)
 			{
-				if (bet.Number is null) return PlaceBetResult.NumberRequired;
-				if (bet.Number < 0 || bet.Number > 36) return PlaceBetResult.InvalidNumber;
+				if (validatedBet.Number is null) return PlaceBetResult.NumberRequired;
+				if (validatedBet.Number < 0 || validatedBet.Number > 36) return PlaceBetResult.InvalidNumber;
 			}
-
-			var balance = await _economyRepository.GetBalanceAsync(bet.UserId);
-			if (bet.Amount > balance) return PlaceBetResult.InsufficientBalance;
 
 			return PlaceBetResult.Success;
 		}

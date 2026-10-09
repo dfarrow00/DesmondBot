@@ -81,7 +81,7 @@ public class SqliteEconomyRepository : IEconomyRepository
 		return Convert.ToInt32(result);
 	}
 
-	public async Task RemoveBalanceAsync(ulong userId, int amount)
+	public async Task<bool> TryRemoveBalanceAsync(ulong userId, int amount)
 	{
 		await using var connection = _connectionFactory.CreateConnection();
 		await connection.OpenAsync();
@@ -90,13 +90,15 @@ public class SqliteEconomyRepository : IEconomyRepository
 		command.CommandText = @"
 			UPDATE UserBalances
 			SET Balance = Balance - @amount
-			WHERE UserId = @userId;
+			WHERE UserId = @userId
+			AND Balance >= @amount;
 			";
 
 		command.Parameters.AddWithValue("@userId", userId);
 		command.Parameters.AddWithValue("@amount", amount);
 
-		await command.ExecuteNonQueryAsync();
+		var rowsAffected = await command.ExecuteNonQueryAsync();
+		return rowsAffected == 1;
 	}
 
 	public async Task AddBalanceAsync(ulong userId, int amount)
