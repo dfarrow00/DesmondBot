@@ -20,22 +20,32 @@ public class RouletteGameService
 
 	public RouletteGame StartGame()
 	{
-		_activeGame = new RouletteGame(1, DateTimeOffset.UtcNow.AddSeconds(32));
-		ScheduleBettingClosed(_activeGame);
+		var game = new RouletteGame(1, DateTimeOffset.UtcNow.AddSeconds(32));
 
-		return _activeGame;
+		_betPlacementLock.Wait();
+		try
+		{
+			_activeGame = game;
+		}
+		finally
+		{
+			_betPlacementLock.Release();
+		}
+
+		ScheduleBettingClosed(game);
+		return game;
 	}
 
 	public async Task<PlaceBetResult> PlaceBetAsync(ulong userId, int amount, RouletteBetType betType, int? number)
 	{
-		if (_activeGame == null)
-		{
-			return PlaceBetResult.NoActiveGame;
-		}
-
 		await _betPlacementLock.WaitAsync();
 		try
 		{
+			if (_activeGame == null)
+			{
+				return PlaceBetResult.NoActiveGame;
+			}
+
 			var bet = new RouletteBet
 			{
 				UserId = userId,
@@ -143,7 +153,16 @@ public class RouletteGameService
 			LosingBets = losingBets
 		};
 
-		_activeGame = null;
+		await _betPlacementLock.WaitAsync();
+		try
+		{
+			_activeGame = null;
+		}
+		finally
+		{
+			_betPlacementLock.Release();
+		}
+
 		await _rouletteMessageService.UpdateMessageResultAsync(game, result);
 		_rouletteMessageService.ResetMessage();
 	}
