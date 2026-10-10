@@ -6,7 +6,7 @@ namespace DesmondBot.Infrastructure.Persistence.Sqlite;
 public class SqliteEconomyRepository : IEconomyRepository
 {
 	private readonly SqliteConnectionFactory _connectionFactory;
-	private const int _initialBalance = 500;
+	private const int _initialBalance = 200;
 
 	public SqliteEconomyRepository(SqliteConnectionFactory connectionFactory)
 	{
@@ -140,6 +140,23 @@ public class SqliteEconomyRepository : IEconomyRepository
 
 		command.Parameters.AddWithValue("@userId", userId);
 		command.Parameters.AddWithValue("@amount", amount);
+
+		await command.ExecuteNonQueryAsync();
+	}
+
+	public async Task SetMinimumBalancesAsync()
+	{
+		await using var connection = _connectionFactory.CreateConnection();
+		await connection.OpenAsync();
+
+		await using var command = connection.CreateCommand();
+		command.CommandText = @"
+			UPDATE UserBalances
+			SET Balance = @minimumBalance
+			WHERE Balance < @minimumBalance;
+			";
+
+		command.Parameters.AddWithValue("@minimumBalance", _initialBalance);
 
 		await command.ExecuteNonQueryAsync();
 	}

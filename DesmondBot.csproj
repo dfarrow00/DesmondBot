@@ -22,7 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Economy\Application\" />
     <Folder Include="Features\Economy\Domain\" />
   </ItemGroup>
 

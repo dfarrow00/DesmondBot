@@ -33,6 +33,7 @@ builder.Services.AddSingleton<SqliteDatabaseInitializer>();
 builder.Services.AddSingleton<RouletteGameService>();
 builder.Services.AddSingleton<RouletteMessageService>();
 builder.Services.AddSingleton<IEconomyRepository, SqliteEconomyRepository>();
+builder.Services.AddHostedService<DailyBalanceResetService>();
 
 var host = builder.Build();
 

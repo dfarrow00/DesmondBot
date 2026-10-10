@@ -10,7 +10,7 @@ public static class RouletteModalBuilder
 	{
 		return new ModalProperties("roulette-bet-submit", "Place Your Bet")
 		{
-			new LabelProperties("\U0001FA99 Bet Amount",
+			new LabelProperties("\U0001F4B8 Bet Amount",
 				new TextInputProperties("roulette-bet-amount", TextInputStyle.Short)
 				{
 					Placeholder = "500",
@@ -47,7 +47,7 @@ public static class RouletteModalBuilder
 					Required = true
 				}),
 
-			 new LabelProperties("\U0001F522 Number",
+			 new LabelProperties("\U0001F3AF Number",
 				new TextInputProperties("roulette-bet-number", TextInputStyle.Short)
 				{
 					Placeholder = "0-36",

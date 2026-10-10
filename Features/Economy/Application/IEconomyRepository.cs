@@ -8,4 +8,5 @@ public interface IEconomyRepository
 	Task<List<(ulong UserId, int Balance)>> GetLeaderboardAsync();
 	Task<bool> TryRemoveBalanceAsync(ulong userId, int amount);
 	Task AddBalanceAsync(ulong userId, int amount);
+	Task SetMinimumBalancesAsync();
 }
