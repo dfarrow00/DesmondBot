@@ -1,6 +1,5 @@
 ﻿using DesmondBot.Features.Roulette.Application;
 using NetCord;
-using NetCord.Gateway;
 using NetCord.Rest;
 using NetCord.Services.ApplicationCommands;
 

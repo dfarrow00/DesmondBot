@@ -37,7 +37,7 @@ public static class RouletteModalBuilder
 
 						new StringMenuSelectOptionProperties("Number - 36x payout", $"{RouletteBetType.Number}")
 						{
-							Emoji = EmojiProperties.Standard("\U0001F522")
+							Emoji = EmojiProperties.Standard("\U0001F3AF")
 						}
 					})
 				{

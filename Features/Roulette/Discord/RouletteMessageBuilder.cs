@@ -32,8 +32,8 @@ public static class RouletteMessageBuilder
 			Color = new Color(0xFF3B3B),
 			Fields = new List<EmbedFieldProperties>
 			{
-				new EmbedFieldProperties { Name = "Min Bet", Value = ":coin: 1", Inline = true },
-				new EmbedFieldProperties { Name = "Max Bet", Value = ":coin: 100k", Inline = true },
+				new EmbedFieldProperties { Name = "Min Bet", Value = ":money_with_wings: 1", Inline = true },
+				new EmbedFieldProperties { Name = "Max Bet", Value = ":money_with_wings: 100k", Inline = true },
 				new EmbedFieldProperties { Name = "Pot", Value = $":moneybag: {game.Bets.Sum(b => b.Amount)}", Inline = true },
 				new EmbedFieldProperties
 				{
@@ -141,24 +141,24 @@ public static class RouletteMessageBuilder
 		{
 			RouletteBetType.Red => ":red_circle: Red",
 			RouletteBetType.Black => ":black_circle: Black",
-			RouletteBetType.Number => $":1234: {bet.Number}",
+			RouletteBetType.Number => $":dart: {bet.Number}",
 			_ => throw new Exception($"Invalid roulette bet type {(int)bet.Type}"),
 		};
 	}
 
 	private static string FormatPlacedBetLine(RouletteBet bet)
 	{
-		return $"<@{bet.UserId}>\u2003-\u2003{FormatBetType(bet)}\u2003-\u2003:coin: {bet.Amount}\n";
+		return $"<@{bet.UserId}>\u2003-\u2003{FormatBetType(bet)}\u2003-\u2003:money_with_wings: {bet.Amount}\n";
 	}
 
 	private static string FormatWinningBetLine(RouletteBetWithPayout betWithPayout)
 	{
 		var bet = betWithPayout.Bet;
-		return $"<@{bet.UserId}>\u2003-\u2003{FormatBetType(bet)}\u2003-\u2003:coin: +{betWithPayout.Payout}\n";
+		return $"<@{bet.UserId}>\u2003-\u2003{FormatBetType(bet)}\u2003-\u2003:money_with_wings: +{betWithPayout.Payout}\n";
 	}
 
 	private static string FormatLosingBetLine(RouletteBet bet)
 	{
-		return $"<@{bet.UserId}>\u2003-\u2003{FormatBetType(bet)}\u2003-\u2003:coin: -{bet.Amount}\n";
+		return $"<@{bet.UserId}>\u2003-\u2003{FormatBetType(bet)}\u2003-\u2003:money_with_wings: -{bet.Amount}\n";
 	}
 }

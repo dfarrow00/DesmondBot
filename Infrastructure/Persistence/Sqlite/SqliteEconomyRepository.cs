@@ -70,15 +70,40 @@ public class SqliteEconomyRepository : IEconomyRepository
 
 		await using var command = connection.CreateCommand();
 		command.CommandText = @"
-            SELECT Balance
+			SELECT Balance
 			FROM UserBalances
 			WHERE UserId = @userId;
-            ";
+			";
 
 		command.Parameters.AddWithValue("@userId", userId);
 
 		var result = await command.ExecuteScalarAsync();
 		return Convert.ToInt32(result);
+	}
+
+	public async Task<List<(ulong UserId, int Balance)>> GetLeaderboardAsync()
+	{
+		await using var connection = _connectionFactory.CreateConnection();
+		await connection.OpenAsync();
+
+		await using var command = connection.CreateCommand();
+		command.CommandText = @"
+			SELECT UserId, Balance
+			FROM UserBalances
+			ORDER BY Balance DESC, UserId ASC;
+			";
+
+		await using var reader = await command.ExecuteReaderAsync();
+		var leaderboard = new List<(ulong UserId, int Balance)>();
+
+		while (await reader.ReadAsync())
+		{
+			var userId = (ulong)reader.GetInt64(0);
+			var balance = reader.GetInt32(1);
+			leaderboard.Add((userId, balance));
+		}
+
+		return leaderboard;
 	}
 
 	public async Task<bool> TryRemoveBalanceAsync(ulong userId, int amount)
