@@ -17,10 +17,33 @@ public class SqliteDatabaseInitializer
 		await using var command = connection.CreateCommand();
 		command.CommandText = @"
 			CREATE TABLE IF NOT EXISTS UserBalances
-            (
-                UserId INTEGER PRIMARY KEY,
-                Balance INTEGER NOT NULL
-            );";
+			(
+				UserId INTEGER PRIMARY KEY,
+				Balance INTEGER NOT NULL
+			);
+
+			CREATE TABLE IF NOT EXISTS RouletteGames
+			(
+				Id INTEGER PRIMARY KEY AUTOINCREMENT,
+				CompletedAtUtc TEXT NOT NULL,
+				SpinNumber INTEGER NOT NULL,
+				SpinColour TEXT NOT NULL
+			);
+
+			CREATE TABLE IF NOT EXISTS RoulettePlayerResults
+			(
+				Id INTEGER PRIMARY KEY AUTOINCREMENT,
+				GameId INTEGER NOT NULL,
+				UserId INTEGER NOT NULL,
+				BetAmount INTEGER NOT NULL,
+				BetType TEXT NOT NULL,
+				BetNumber INTEGER NULL,
+				IsWin INTEGER NOT NULL,
+				Payout INTEGER NOT NULL,
+				NetChange INTEGER NOT NULL,
+				BalanceAfterGame INTEGER NOT NULL,
+				FOREIGN KEY(GameId) REFERENCES RouletteGames(Id)
+			);";
 
 		await command.ExecuteNonQueryAsync();
 	}

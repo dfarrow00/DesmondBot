@@ -9,29 +9,33 @@ public class RouletteGameService
 {
 	private RouletteGame? _activeGame;
 	private readonly IEconomyRepository _economyRepository;
+	private readonly IRouletteGameRepository _rouletteGameRepository;
 	private readonly RouletteMessageService _rouletteMessageService;
 	private readonly ILogger<RouletteGameService> _logger;
 	private readonly Random _random = new();
 	private readonly SemaphoreSlim _rouletteBetLock = new(1, 1);
 	private CancellationTokenSource? _gameCts;
 
-	public RouletteGameService(
-		IEconomyRepository economyRepository,
+	public RouletteGameService(IEconomyRepository economyRepository,
+		IRouletteGameRepository rouletteGameRepository,
 		RouletteMessageService rouletteMessageService,
 		ILogger<RouletteGameService> logger)
 	{
 		_economyRepository = economyRepository;
+		_rouletteGameRepository = rouletteGameRepository;
 		_rouletteMessageService = rouletteMessageService;
 		_logger = logger;
 	}
 
 	public async Task<RouletteGame> StartGameAsync()
 	{
-		var game = new RouletteGame(1, DateTimeOffset.UtcNow.AddSeconds(32));
+		RouletteGame game;
 
 		await _rouletteBetLock.WaitAsync();
 		try
 		{
+			var gameId = await _rouletteGameRepository.GetNextGameIdAsync();
+			game = new RouletteGame(gameId, DateTimeOffset.UtcNow.AddSeconds(32));
 			_activeGame = game;
 		}
 		finally
@@ -153,31 +157,18 @@ public class RouletteGameService
 	private async Task SpinWheelAsync(RouletteGame game)
 	{
 		var spinResult = GenerateRouletteSpinResult();
-		var winningBets = GetWinningBets(game.Bets, spinResult);
-		var winningBetsWithPayouts = new List<RouletteBetWithPayout>();
+		var playerResults = GetPlayerResults(game.Bets, spinResult);
 
-		foreach (var bet in winningBets)
-		{
-			var payout = CalculatePayout(bet);
-			await _economyRepository.AddBalanceAsync(bet.UserId, (int)payout);
-			winningBetsWithPayouts.Add(new RouletteBetWithPayout { Bet = bet, Payout = payout });
-		}
-
-		var losingBets = game.Bets.Where(b => !winningBets.Contains(b)).ToList();
 		var result = new RouletteResult
 		{
 			Result = spinResult,
-			WinningBets = winningBetsWithPayouts,
-			LosingBets = losingBets
+			WinningBets = playerResults.Where(r => r.IsWin).ToList(),
+			LosingBets = playerResults.Where(r => r.IsWin == false).ToList()
 		};
 
-		_logger.LogInformation(
-			"Roulette spun {Number} ({Colour}). Winning bets: {WinningCount}. Losing bets: {LosingCount}. Total payout: {TotalPayout}.",
-			spinResult.Number,
-			spinResult.Colour,
-			winningBetsWithPayouts.Count,
-			losingBets.Count,
-			winningBetsWithPayouts.Sum(w => w.Payout));
+		await _rouletteGameRepository.SaveGameOutcomeAsync(spinResult, playerResults, DateTimeOffset.UtcNow);
+
+		_logger.LogInformation("Roulette spun {Number} ({Colour}).",spinResult.Number,spinResult.Colour);
 
 		await _rouletteBetLock.WaitAsync();
 		try
@@ -211,9 +202,24 @@ public class RouletteGameService
 		return redNumbers.Contains(number);
 	}
 
-	private List<RouletteBet> GetWinningBets(List<RouletteBet> bets, RouletteSpinResult result)
+	private List<RoulettePlayerResult> GetPlayerResults(List<RouletteBet> bets, RouletteSpinResult result)
 	{
-		return bets.Where(bet => IsWinningBet(bet, result)).ToList();
+		return bets.Select(bet =>
+		{
+			var isWin = IsWinningBet(bet, result);
+			var payout = isWin ? CalculatePayout(bet) : 0;
+
+			return new RoulettePlayerResult
+			{
+				UserId = bet.UserId,
+				BetAmount = bet.Amount,
+				BetType = bet.Type,
+				BetNumber = bet.Number,
+				IsWin = isWin,
+				Payout = payout,
+				NetChange = isWin ? payout - bet.Amount : -bet.Amount
+			};
+		}).ToList();
 	}
 
 	private bool IsWinningBet(RouletteBet bet, RouletteSpinResult result)
@@ -227,7 +233,7 @@ public class RouletteGameService
 		};
 	}
 
-	private decimal CalculatePayout(RouletteBet bet)
+	private int CalculatePayout(RouletteBet bet)
 	{
 		return bet.Type switch
 		{

@@ -121,44 +121,43 @@ public static class RouletteMessageBuilder
 			: string.Join("", bets.Select(FormatPlacedBetLine));
 	}
 
-	private static string GetWinningBetsString(List<RouletteBetWithPayout> bets)
+	private static string GetWinningBetsString(List<RoulettePlayerResult> bets)
 	{
 		return bets.Count == 0
 			? "None"
 			: string.Join("", bets.Select(FormatWinningBetLine));
 	}
 
-	private static string GetLosingBetsString(List<RouletteBet> bets)
+	private static string GetLosingBetsString(List<RoulettePlayerResult> bets)
 	{
 		return bets.Count == 0
 			? "None"
 			: string.Join("", bets.Select(FormatLosingBetLine));
 	}
 
-	private static string FormatBetType(RouletteBet bet)
+	private static string FormatBetType(RouletteBetType betType, int? number)
 	{
-		return bet.Type switch
+		return betType switch
 		{
 			RouletteBetType.Red => ":red_circle: Red",
 			RouletteBetType.Black => ":black_circle: Black",
-			RouletteBetType.Number => $":dart: {bet.Number}",
-			_ => throw new Exception($"Invalid roulette bet type {(int)bet.Type}"),
+			RouletteBetType.Number => $":dart: {number}",
+			_ => throw new Exception($"Invalid roulette bet type {(int)betType}"),
 		};
 	}
 
 	private static string FormatPlacedBetLine(RouletteBet bet)
 	{
-		return $"<@{bet.UserId}>\u2003-\u2003{FormatBetType(bet)}\u2003-\u2003:money_with_wings: {bet.Amount}\n";
+		return $"<@{bet.UserId}>\u2003-\u2003{FormatBetType(bet.Type, bet.Number)}\u2003-\u2003:money_with_wings: {bet.Amount}\n";
 	}
 
-	private static string FormatWinningBetLine(RouletteBetWithPayout betWithPayout)
+	private static string FormatWinningBetLine(RoulettePlayerResult playerResult)
 	{
-		var bet = betWithPayout.Bet;
-		return $"<@{bet.UserId}>\u2003-\u2003{FormatBetType(bet)}\u2003-\u2003:money_with_wings: +{betWithPayout.Payout}\n";
+		return $"<@{playerResult.UserId}>\u2003-\u2003{FormatBetType(playerResult.BetType, playerResult.BetNumber)}\u2003-\u2003:money_with_wings: +{playerResult.Payout}\n";
 	}
 
-	private static string FormatLosingBetLine(RouletteBet bet)
+	private static string FormatLosingBetLine(RoulettePlayerResult playerResult)
 	{
-		return $"<@{bet.UserId}>\u2003-\u2003{FormatBetType(bet)}\u2003-\u2003:money_with_wings: -{bet.Amount}\n";
+		return $"<@{playerResult.UserId}>\u2003-\u2003{FormatBetType(playerResult.BetType, playerResult.BetNumber)}\u2003-\u2003:money_with_wings: -{playerResult.BetAmount}\n";
 	}
 }
