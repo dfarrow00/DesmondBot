@@ -1,4 +1,5 @@
 ﻿using DesmondBot.Features.Economy.Application;
+using Microsoft.Extensions.Logging;
 using NetCord;
 using NetCord.Rest;
 using NetCord.Services.ApplicationCommands;
@@ -8,10 +9,12 @@ namespace DesmondBot.Features.Economy.Discord;
 public class EconomyCommandModule : ApplicationCommandModule<ApplicationCommandContext>
 {
 	private readonly IEconomyRepository _economyRepository;
+	private readonly ILogger<EconomyCommandModule> _logger;
 
-	public EconomyCommandModule(IEconomyRepository economyRepository)
+	public EconomyCommandModule(IEconomyRepository economyRepository, ILogger<EconomyCommandModule> logger)
 	{
 		_economyRepository = economyRepository;
+		_logger = logger;
 	}
 
 	[SlashCommand("money", "Check your current balance")]
@@ -65,6 +68,12 @@ public class EconomyCommandModule : ApplicationCommandModule<ApplicationCommandC
 			};
 		}
 
+		_logger.LogInformation(
+			"/send-money success. Sender={SenderId}, Recipient={RecipientId}, Amount={Amount}",
+			Context.User.Id,
+			recipient.Id,
+			amount);
+
 		return new InteractionMessageProperties
 		{
 			Content = $"<@{Context.User.Id}> sent :money_with_wings: {amount} to <@{recipient.Id}>"
@@ -75,6 +84,8 @@ public class EconomyCommandModule : ApplicationCommandModule<ApplicationCommandC
 	public async Task<InteractionMessageProperties> GetLeaderboardAsync()
 	{
 		var leaderboard = await _economyRepository.GetLeaderboardAsync();
+		_logger.LogInformation("/leaderboard requested by {UserId}.", Context.User.Id);
+
 		var description = leaderboard.Count == 0
 			? "No balances found."
 			: string.Join("\n", leaderboard.Select((entry, index) =>

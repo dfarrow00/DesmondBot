@@ -1,6 +1,7 @@
 ﻿using DesmondBot.Features.Economy.Application;
 using DesmondBot.Features.Roulette.Discord;
 using DesmondBot.Features.Roulette.Domain;
+using Microsoft.Extensions.Logging;
 
 namespace DesmondBot.Features.Roulette.Application;
 
@@ -9,14 +10,19 @@ public class RouletteGameService
 	private RouletteGame? _activeGame;
 	private readonly IEconomyRepository _economyRepository;
 	private readonly RouletteMessageService _rouletteMessageService;
+	private readonly ILogger<RouletteGameService> _logger;
 	private readonly Random _random = new();
 	private readonly SemaphoreSlim _rouletteBetLock = new(1, 1);
 	private CancellationTokenSource? _gameCts;
 
-	public RouletteGameService(IEconomyRepository economyRepository, RouletteMessageService rouletteMessageService)
+	public RouletteGameService(
+		IEconomyRepository economyRepository,
+		RouletteMessageService rouletteMessageService,
+		ILogger<RouletteGameService> logger)
 	{
 		_economyRepository = economyRepository;
 		_rouletteMessageService = rouletteMessageService;
+		_logger = logger;
 	}
 
 	public async Task<RouletteGame> StartGameAsync()
@@ -37,7 +43,10 @@ public class RouletteGameService
 		_gameCts?.Dispose();
 		_gameCts = new CancellationTokenSource();
 
-		await ScheduleBettingClosedAsync(game, _gameCts.Token);
+		_logger.LogInformation("Roulette game started. Betting closes at {BettingCloseTimeUtc}.", game.BettingCloseTime);
+
+		_ = ScheduleBettingClosedAsync(game, _gameCts.Token);
+
 		return game;
 	}
 
@@ -71,8 +80,8 @@ public class RouletteGameService
 				return PlaceBetResult.InsufficientBalance;
 			}
 
-            _activeGame.Bets.Add(bet);
-            return PlaceBetResult.Success;
+			_activeGame.Bets.Add(bet);
+			return PlaceBetResult.Success;
 		}
 		finally
 		{
@@ -80,24 +89,24 @@ public class RouletteGameService
 		}
 	}
 
-    private PlaceBetResult ValidateBet(RouletteBet validatedBet)
-    {
-        if (_activeGame == null) return PlaceBetResult.NoActiveGame;
+	private PlaceBetResult ValidateBet(RouletteBet validatedBet)
+	{
+		if (_activeGame == null) return PlaceBetResult.NoActiveGame;
 
-        if (DateTimeOffset.UtcNow >= _activeGame.BettingCloseTime) return PlaceBetResult.BettingClosed;
+		if (DateTimeOffset.UtcNow >= _activeGame.BettingCloseTime) return PlaceBetResult.BettingClosed;
 
-        if (_activeGame.Bets.Any(b => b.UserId == validatedBet.UserId)) return PlaceBetResult.AlreadyBet;
+		if (_activeGame.Bets.Any(b => b.UserId == validatedBet.UserId)) return PlaceBetResult.AlreadyBet;
 
-        if (validatedBet.Amount <= 0) return PlaceBetResult.InvalidAmount;
+		if (validatedBet.Amount <= 0) return PlaceBetResult.InvalidAmount;
 
-        if (validatedBet.Type == RouletteBetType.Number)
-        {
-            if (validatedBet.Number is null) return PlaceBetResult.NumberRequired;
-            if (validatedBet.Number < 0 || validatedBet.Number > 36) return PlaceBetResult.InvalidNumber;
-        }
+		if (validatedBet.Type == RouletteBetType.Number)
+		{
+			if (validatedBet.Number is null) return PlaceBetResult.NumberRequired;
+			if (validatedBet.Number < 0 || validatedBet.Number > 36) return PlaceBetResult.InvalidNumber;
+		}
 
-        return PlaceBetResult.Success;
-    }
+		return PlaceBetResult.Success;
+	}
 
 	public bool HasActiveGame()
 	{
@@ -129,14 +138,16 @@ public class RouletteGameService
 	{
 		var delay = game.BettingCloseTime - DateTimeOffset.UtcNow;
 		await Task.Delay(delay, token);
+
+		_logger.LogInformation("Roulette betting closed with {TotalBets} bet(s).", game.Bets.Count);
 		await _rouletteMessageService.UpdateMessageBettingClosedAsync(game);
-		await ScheduleWheelSpinAsync(game, token);
+		_ = ScheduleWheelSpinAsync(game, token);
 	}
 
 	private async Task ScheduleWheelSpinAsync(RouletteGame game, CancellationToken token)
 	{
 		await Task.Delay(TimeSpan.FromSeconds(10), token);
-		await SpinWheelAsync(game);
+		_ = SpinWheelAsync(game);
 	}
 
 	private async Task SpinWheelAsync(RouletteGame game)
@@ -159,6 +170,14 @@ public class RouletteGameService
 			WinningBets = winningBetsWithPayouts,
 			LosingBets = losingBets
 		};
+
+		_logger.LogInformation(
+			"Roulette spun {Number} ({Colour}). Winning bets: {WinningCount}. Losing bets: {LosingCount}. Total payout: {TotalPayout}.",
+			spinResult.Number,
+			spinResult.Colour,
+			winningBetsWithPayouts.Count,
+			losingBets.Count,
+			winningBetsWithPayouts.Sum(w => w.Payout));
 
 		await _rouletteBetLock.WaitAsync();
 		try
