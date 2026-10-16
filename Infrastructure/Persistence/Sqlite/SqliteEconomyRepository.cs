@@ -144,6 +144,48 @@ public class SqliteEconomyRepository : IEconomyRepository
 		await command.ExecuteNonQueryAsync();
 	}
 
+	public async Task<bool> TryTransferBalanceAsync(ulong senderId, ulong recipientId, int amount)
+	{
+		await using var connection = _connectionFactory.CreateConnection();
+		await connection.OpenAsync();
+
+		await using var transaction = connection.BeginTransaction();
+
+		await using var debitCommand = connection.CreateCommand();
+		debitCommand.Transaction = transaction;
+		debitCommand.CommandText = @"
+			UPDATE UserBalances
+			SET Balance = Balance - @amount
+			WHERE UserId = @senderId
+			AND Balance >= @amount;
+			";
+
+		debitCommand.Parameters.AddWithValue("@senderId", senderId);
+		debitCommand.Parameters.AddWithValue("@amount", amount);
+
+		var rowsAffected = await debitCommand.ExecuteNonQueryAsync();
+		if (rowsAffected < 1)
+		{
+			await transaction.RollbackAsync();
+			return false;
+		}
+
+		await using var creditCommand = connection.CreateCommand();
+		creditCommand.Transaction = transaction;
+		creditCommand.CommandText = @"
+			UPDATE UserBalances
+			SET Balance = Balance + @amount
+			WHERE UserId = @recipientId;
+			";
+
+		creditCommand.Parameters.AddWithValue("@recipientId", recipientId);
+		creditCommand.Parameters.AddWithValue("@amount", amount);
+
+		await creditCommand.ExecuteNonQueryAsync();
+		await transaction.CommitAsync();
+		return true;
+	}
+
 	public async Task SetMinimumBalancesAsync()
 	{
 		await using var connection = _connectionFactory.CreateConnection();

@@ -14,7 +14,7 @@ public class EconomyCommandModule : ApplicationCommandModule<ApplicationCommandC
 		_economyRepository = economyRepository;
 	}
 
-	[SlashCommand("balance", "Check your current balance")]
+	[SlashCommand("money", "Check your current balance")]
 	public async Task<InteractionMessageProperties> GetBalanceAsync()
 	{
 		var balance = await _economyRepository.GetBalanceAsync(Context.User.Id);
@@ -25,7 +25,53 @@ public class EconomyCommandModule : ApplicationCommandModule<ApplicationCommandC
 		};
 	}
 
-	[SlashCommand("leaderboard", "View the balance leaderboard")]
+	[SlashCommand("send-money", "Send money to another user")]
+	public async Task<InteractionMessageProperties> SendMoneyAsync(GuildUser recipient, int amount)
+	{
+		if (recipient.Id == Context.User.Id)
+		{
+			return new InteractionMessageProperties
+			{
+				Content = "You cannot send money to yourself",
+				Flags = MessageFlags.Ephemeral
+			};
+		}
+
+		if (recipient.IsBot)
+		{
+			return new InteractionMessageProperties
+			{
+				Content = "You cannot send money to DesmondBot",
+				Flags = MessageFlags.Ephemeral
+			};
+		}
+
+		if (amount <= 0)
+		{
+			return new InteractionMessageProperties
+			{
+				Content = "The amount must be greater than zero",
+				Flags = MessageFlags.Ephemeral
+			};
+		}
+
+		var success = await _economyRepository.TryTransferBalanceAsync(Context.User.Id, recipient.Id, amount);
+		if (success == false)
+		{
+			return new InteractionMessageProperties
+			{
+				Content = $"You do not have enough money to send {amount}",
+				Flags = MessageFlags.Ephemeral
+			};
+		}
+
+		return new InteractionMessageProperties
+		{
+			Content = $"<@{Context.User.Id}> sent :money_with_wings: {amount} to <@{recipient.Id}>"
+		};
+	}
+
+	[SlashCommand("leaderboard", "View the money leaderboard")]
 	public async Task<InteractionMessageProperties> GetLeaderboardAsync()
 	{
 		var leaderboard = await _economyRepository.GetLeaderboardAsync();
