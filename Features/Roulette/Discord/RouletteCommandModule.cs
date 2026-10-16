@@ -29,7 +29,7 @@ public class RouletteCommandModule : ApplicationCommandModule<ApplicationCommand
 			return;
 		}
 
-		var game = _rouletteGameService.StartGame();
+		var game = await _rouletteGameService.StartGameAsync();
 		var message = RouletteMessageBuilder.Create(game);
 		await Context.Interaction.SendResponseAsync(InteractionCallback.Message(message));
 

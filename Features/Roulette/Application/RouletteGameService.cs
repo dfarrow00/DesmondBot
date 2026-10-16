@@ -11,6 +11,7 @@ public class RouletteGameService
 	private readonly RouletteMessageService _rouletteMessageService;
 	private readonly Random _random = new();
 	private readonly SemaphoreSlim _rouletteBetLock = new(1, 1);
+	private CancellationTokenSource? _gameCts;
 
 	public RouletteGameService(IEconomyRepository economyRepository, RouletteMessageService rouletteMessageService)
 	{
@@ -18,11 +19,11 @@ public class RouletteGameService
 		_rouletteMessageService = rouletteMessageService;
 	}
 
-	public RouletteGame StartGame()
+	public async Task<RouletteGame> StartGameAsync()
 	{
 		var game = new RouletteGame(1, DateTimeOffset.UtcNow.AddSeconds(32));
 
-		_rouletteBetLock.Wait();
+		await _rouletteBetLock.WaitAsync();
 		try
 		{
 			_activeGame = game;
@@ -32,7 +33,11 @@ public class RouletteGameService
 			_rouletteBetLock.Release();
 		}
 
-		ScheduleBettingClosed(game);
+		_gameCts?.Cancel();
+		_gameCts?.Dispose();
+		_gameCts = new CancellationTokenSource();
+
+		await ScheduleBettingClosedAsync(game, _gameCts.Token);
 		return game;
 	}
 
@@ -96,32 +101,42 @@ public class RouletteGameService
 
 	public bool HasActiveGame()
 	{
-		return _activeGame != null;
+		_rouletteBetLock.Wait();
+		try
+		{
+			return _activeGame != null;
+		}
+		finally
+		{
+			_rouletteBetLock.Release();
+		}
 	}
 
 	public RouletteGame GetActiveGame()
 	{
-		return _activeGame ?? throw new InvalidOperationException("No active roulette game.");
+		_rouletteBetLock.Wait();
+		try
+		{
+			return _activeGame ?? throw new InvalidOperationException("No active roulette game.");
+		}
+		finally
+		{
+			_rouletteBetLock.Release();
+		}
 	}
 
-	private void ScheduleBettingClosed(RouletteGame game)
+	private async Task ScheduleBettingClosedAsync(RouletteGame game, CancellationToken token)
 	{
-		_ = Task.Run(async () =>
-		{
-			var delay = game.BettingCloseTime - DateTimeOffset.UtcNow;
-			await Task.Delay(delay);
-			await _rouletteMessageService.UpdateMessageBettingClosedAsync(game);
-			ScheduleWheelSpin(game);
-		});
+		var delay = game.BettingCloseTime - DateTimeOffset.UtcNow;
+		await Task.Delay(delay, token);
+		await _rouletteMessageService.UpdateMessageBettingClosedAsync(game);
+		await ScheduleWheelSpinAsync(game, token);
 	}
 
-	private void ScheduleWheelSpin(RouletteGame game)
+	private async Task ScheduleWheelSpinAsync(RouletteGame game, CancellationToken token)
 	{
-		_ = Task.Run(async () =>
-		{
-			await Task.Delay(TimeSpan.FromSeconds(10));
-			await SpinWheelAsync(game);
-		});
+		await Task.Delay(TimeSpan.FromSeconds(10), token);
+		await SpinWheelAsync(game);
 	}
 
 	private async Task SpinWheelAsync(RouletteGame game)
