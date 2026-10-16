@@ -9,11 +9,15 @@ public class RouletteCommandModule : ApplicationCommandModule<ApplicationCommand
 {
 	private readonly RouletteGameService _rouletteGameService;
 	private readonly RouletteMessageService _rouletteMessageService;
+	private readonly IRouletteGameRepository _rouletteGameRepository;
 
-	public RouletteCommandModule(RouletteGameService rouletteGameService, RouletteMessageService rouletteMessageService)
+	public RouletteCommandModule(RouletteGameService rouletteGameService,
+		RouletteMessageService rouletteMessageService,
+		IRouletteGameRepository rouletteGameRepository)
 	{
 		_rouletteGameService = rouletteGameService;
 		_rouletteMessageService = rouletteMessageService;
+		_rouletteGameRepository = rouletteGameRepository;
 	}
 
 	[SlashCommand("roulette", "Start a new game of roulette")]
@@ -38,5 +42,23 @@ public class RouletteCommandModule : ApplicationCommandModule<ApplicationCommand
 		var channelId = response.ChannelId;
 
 		_rouletteMessageService.RegisterMessage(channelId, messageId);
+	}
+
+	[SlashCommand("stats", "View roulette stats for a player")]
+	public async Task<InteractionMessageProperties> GetRouletteStatsAsync(GuildUser player)
+	{
+		if (player.IsBot)
+		{
+			return new InteractionMessageProperties
+			{
+				Content = ":exclamation: DesmondBot does not have roulette stats",
+				Flags = MessageFlags.Ephemeral
+			};
+		}
+
+		var stats = await _rouletteGameRepository.GetPlayerStatsAsync(player.Id);
+		var embed = RouletteMessageBuilder.CreateStatsEmbed(player.Id, stats);
+
+		return new InteractionMessageProperties().WithEmbeds(new[] { embed });
 	}
 }

@@ -28,6 +28,80 @@ public class SqliteRouletteGameRepository : IRouletteGameRepository
 		return Convert.ToInt32(result);
 	}
 
+	public async Task<RoulettePlayerStats> GetPlayerStatsAsync(ulong userId)
+	{
+		await using var connection = _connectionFactory.CreateConnection();
+		await connection.OpenAsync();
+
+		await using var aggregateCommand = connection.CreateCommand();
+		aggregateCommand.CommandText = @"
+			SELECT
+				COUNT(*),
+				COALESCE(SUM(CASE WHEN IsWin = 1 THEN 1 ELSE 0 END), 0),
+				COALESCE(SUM(BetAmount), 0),
+				COALESCE(MAX(BalanceAfterGame), (SELECT Balance FROM UserBalances WHERE UserId = @userId), 200),
+				COALESCE(MAX(NetChange), 0),
+				COALESCE(MIN(NetChange), 0)
+			FROM RoulettePlayerResults
+			WHERE UserId = @userId;
+			";
+
+		aggregateCommand.Parameters.AddWithValue("@userId", userId);
+
+		await using var aggregateReader = await aggregateCommand.ExecuteReaderAsync();
+		await aggregateReader.ReadAsync();
+
+		var totalGamesPlayed = aggregateReader.GetInt32(0);
+		var totalWins = aggregateReader.GetInt32(1);
+		var totalWagered = aggregateReader.GetInt32(2);
+		var peakBalance = aggregateReader.GetInt32(3);
+		var biggestWin = aggregateReader.GetInt32(4);
+		var biggestLoss = aggregateReader.GetInt32(5);
+		var winRate = totalGamesPlayed == 0 ? 0m : (decimal)totalWins / totalGamesPlayed * 100m;
+
+		await using var streakCommand = connection.CreateCommand();
+		streakCommand.CommandText = @"
+			SELECT IsWin
+			FROM RoulettePlayerResults
+			WHERE UserId = @userId
+			ORDER BY GameId ASC;
+			";
+
+		streakCommand.Parameters.AddWithValue("@userId", userId);
+
+		await using var streakReader = await streakCommand.ExecuteReaderAsync();
+
+		var currentStreak = 0;
+		var longestStreak = 0;
+		while (await streakReader.ReadAsync())
+		{
+			var isWin = streakReader.GetInt32(0) == 1;
+			if (isWin)
+			{
+				currentStreak++;
+				if (currentStreak > longestStreak)
+				{
+					longestStreak = currentStreak;
+				}
+			}
+			else
+			{
+				currentStreak = 0;
+			}
+		}
+
+		return new RoulettePlayerStats
+		{
+			TotalGamesPlayed = totalGamesPlayed,
+			WinRate = winRate,
+			TotalWagered = totalWagered,
+			PeakBalance = peakBalance,
+			BiggestWin = biggestWin,
+			BiggestLoss = biggestLoss,
+			LongestWinningStreak = longestStreak
+		};
+	}
+
 	public async Task SaveGameOutcomeAsync(RouletteSpinResult spinResult,
 		List<RoulettePlayerResult> playerResults,
 		DateTimeOffset completedAtUtc)

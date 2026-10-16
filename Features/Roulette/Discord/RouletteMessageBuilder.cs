@@ -29,7 +29,7 @@ public static class RouletteMessageBuilder
 		{
 			Title = $":slot_machine: Roulette #{game.Id}",
 			Description = $"Place your bets!\nThe wheel will spin **<t:{game.BettingCloseTime.ToUnixTimeSeconds()}:R>**",
-			Color = new Color(0xFF3B3B),
+			Color = new Color(0x176B45),
 			Fields = new List<EmbedFieldProperties>
 			{
 				new EmbedFieldProperties { Name = "Min Bet", Value = ":money_with_wings: 1", Inline = true },
@@ -55,7 +55,7 @@ public static class RouletteMessageBuilder
 		{
 			Title = $":slot_machine: Roulette #{game.Id}",
 			Description = ":no_entry_sign: Bets are now closed.\n\n:cyclone: The wheel is spinning...",
-			Color = new Color(0xFF3B3B),
+			Color = new Color(0x176B45),
 			Fields = new List<EmbedFieldProperties>
 			{
 				new EmbedFieldProperties { Name = "Pot", Value = $":moneybag: {game.Bets.Sum(b => b.Amount)}", Inline = true },
@@ -109,8 +109,28 @@ public static class RouletteMessageBuilder
 		{
 			Title = $":slot_machine: Roulette #{game.Id}",
 			Description = $"The wheel has landed on: \u2003**{colourEmoji} {result.Number}**",
-			Color = new Color(0xFF3B3B),
+			Color = new Color(0x176B45),
 			Fields = betResultFields
+		};
+	}
+
+	public static EmbedProperties CreateStatsEmbed(ulong playerId, RoulettePlayerStats stats)
+	{
+		return new EmbedProperties
+		{
+			Title = ":slot_machine: Roulette Stats",
+			Description = $"<@{playerId}>",
+			Color = new Color(0x6554C0),
+			Fields = new List<EmbedFieldProperties>
+			{
+				new() { Name = "Games Played", Value = $":game_die: {stats.TotalGamesPlayed.ToString()}", Inline = true },
+				new() { Name = "Win Rate", Value = $"{stats.WinRate:0.##}%", Inline = true },
+				new() { Name = "Total Wagered", Value = $":money_with_wings: {stats.TotalWagered}", Inline = true },
+				new() { Name = "Peak Balance", Value = $":moneybag: {stats.PeakBalance}", Inline = true },
+				new() { Name = "Biggest Win", Value = $":money_with_wings: +{stats.BiggestWin}", Inline = true },
+				new() { Name = "Biggest Loss", Value = $":money_with_wings: {stats.BiggestLoss}", Inline = true },
+				new() { Name = "Longest Winning Streak", Value = stats.LongestWinningStreak.ToString(), Inline = true }
+			}
 		};
 	}
 
