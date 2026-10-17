@@ -8,7 +8,7 @@ DesmondBot started as a fun side project for a Discord server with me and my fri
 We wanted simple casino-style games we could play in chat without real money, just for competition and fun.
 
 ## Features
-- Casino-style game commands
+- Casino-style games
 - Virtual currency/economy system
 - Leaderboard and player stats
 
