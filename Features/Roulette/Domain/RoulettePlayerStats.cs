@@ -9,4 +9,5 @@ public sealed record RoulettePlayerStats
 	public int BiggestWin { get; init; }
 	public int BiggestLoss { get; init; }
 	public int LongestWinningStreak { get; init; }
+	public int CurrentWinningStreak { get; init; }
 }

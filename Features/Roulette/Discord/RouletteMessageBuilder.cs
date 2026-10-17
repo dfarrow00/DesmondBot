@@ -129,6 +129,7 @@ public static class RouletteMessageBuilder
 				new() { Name = "Peak Balance", Value = $":moneybag: {stats.PeakBalance}", Inline = true },
 				new() { Name = "Biggest Win", Value = $":money_with_wings: +{stats.BiggestWin}", Inline = true },
 				new() { Name = "Biggest Loss", Value = $":money_with_wings: {stats.BiggestLoss}", Inline = true },
+				new() { Name = "Current Winning Streak", Value = stats.CurrentWinningStreak.ToString(), Inline = true },
 				new() { Name = "Longest Winning Streak", Value = stats.LongestWinningStreak.ToString(), Inline = true }
 			}
 		};

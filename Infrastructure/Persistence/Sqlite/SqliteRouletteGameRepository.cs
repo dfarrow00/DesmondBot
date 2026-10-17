@@ -101,7 +101,8 @@ public class SqliteRouletteGameRepository : IRouletteGameRepository
 			PeakBalance = peakBalance,
 			BiggestWin = biggestWin,
 			BiggestLoss = biggestLoss,
-			LongestWinningStreak = longestStreak
+			LongestWinningStreak = longestStreak,
+			CurrentWinningStreak = currentStreak
 		};
 	}
 
