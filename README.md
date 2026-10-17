@@ -4,8 +4,8 @@ A small Discord bot project focused on casino-style mini games using virtual cur
 
 ## About
 
-DesmondBot started as a fun side project for a small Discord community I am a part of.
-We wanted simple casino-style games we could play in chat without real money, just for competition and fun.
+DesmondBot was created as a fun side project for a small Discord community I am a part of.
+We wanted simple casino-style games we could play in chat without real money, just for fun.
 
 ## Features
 - Casino-style games
