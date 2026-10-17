@@ -1,5 +1,6 @@
 ﻿using DesmondBot.Features.Roulette.Application;
 using DesmondBot.Features.Roulette.Domain;
+using Microsoft.Extensions.Logging;
 using NetCord;
 using NetCord.Rest;
 using NetCord.Services.ComponentInteractions;
@@ -10,11 +11,13 @@ public class RouletteModalModule : ComponentInteractionModule<ModalInteractionCo
 {
 	private readonly RouletteGameService _rouletteGameService;
 	private readonly IRouletteMessageService _rouletteMessageService;
+	private readonly ILogger<RouletteModalModule> _logger;
 
-	public RouletteModalModule(RouletteGameService rouletteGameService, IRouletteMessageService rouletteMessageService)
+	public RouletteModalModule(RouletteGameService rouletteGameService, IRouletteMessageService rouletteMessageService, ILogger<RouletteModalModule> logger)
 	{
 		_rouletteGameService = rouletteGameService;
 		_rouletteMessageService = rouletteMessageService;
+		_logger = logger;
 	}
 
 	[ComponentInteraction("roulette-bet-submit")]
@@ -75,6 +78,7 @@ public class RouletteModalModule : ComponentInteractionModule<ModalInteractionCo
 			await Context.Interaction.SendResponseAsync(InteractionCallback.DeferredModifyMessage);
 			var game = _rouletteGameService.GetActiveGame();
 			await _rouletteMessageService.UpdateStartMessageAsync(game);
+			_logger.LogInformation("User {GlobalName} placed a bet of {Amount} on {BetType} (number: {Number})", Context.User.GlobalName, amount, betType, number);
 			return;
 		}
 

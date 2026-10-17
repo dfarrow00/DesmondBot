@@ -47,8 +47,6 @@ public class RouletteGameService
 		_gameCts?.Dispose();
 		_gameCts = new CancellationTokenSource();
 
-		_logger.LogInformation("Roulette game started. Betting closes at {BettingCloseTimeUtc}.", game.BettingCloseTime);
-
 		_ = ScheduleBettingClosedAsync(game, _gameCts.Token);
 
 		return game;

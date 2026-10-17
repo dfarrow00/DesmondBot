@@ -17,8 +17,6 @@ public class DailyBalanceResetService : IHostedService
 
 	public Task StartAsync(CancellationToken cancellationToken)
 	{
-		_logger.LogInformation("Daily balance reset service starting...");
-
 		var now = DateTime.UtcNow;
 		var midnight = now.Date.AddDays(1);
 		var timeUntilMidnight = midnight - now;
@@ -29,7 +27,7 @@ public class DailyBalanceResetService : IHostedService
 			dueTime: timeUntilMidnight,
 			period: TimeSpan.FromHours(24));
 
-		_logger.LogInformation("Daily balance reset scheduled to run at {MidnightTime} UTC (in {TimeUntilMidnight})", midnight, timeUntilMidnight);
+		_logger.LogInformation("Daily balance reset scheduled to run at {MidnightTime} UTC", midnight);
 
 		return Task.CompletedTask;
 	}

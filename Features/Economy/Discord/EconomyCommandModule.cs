@@ -20,6 +20,7 @@ public class EconomyCommandModule : ApplicationCommandModule<ApplicationCommandC
 	[SlashCommand("money", "Check your current balance")]
 	public async Task<InteractionMessageProperties> GetBalanceAsync()
 	{
+		_logger.LogInformation("/money requested by {GlobalName}.", Context.User.GlobalName);
 		var balance = await _economyRepository.GetBalanceAsync(Context.User.Id);
 		return new InteractionMessageProperties
 		{
@@ -69,9 +70,9 @@ public class EconomyCommandModule : ApplicationCommandModule<ApplicationCommandC
 		}
 
 		_logger.LogInformation(
-			"/send-money success. Sender={SenderId}, Recipient={RecipientId}, Amount={Amount}",
-			Context.User.Id,
-			recipient.Id,
+			"/send-money success. Sender={SenderName}, Recipient={RecipientName}, Amount={Amount}",
+			Context.User.GlobalName,
+			recipient.GlobalName,
 			amount);
 
 		return new InteractionMessageProperties
@@ -83,8 +84,8 @@ public class EconomyCommandModule : ApplicationCommandModule<ApplicationCommandC
 	[SlashCommand("leaderboard", "View the money leaderboard")]
 	public async Task<InteractionMessageProperties> GetLeaderboardAsync()
 	{
+		_logger.LogInformation("/leaderboard requested by {GlobalName}.", Context.User.GlobalName);
 		var leaderboard = await _economyRepository.GetLeaderboardAsync();
-		_logger.LogInformation("/leaderboard requested by {UserId}.", Context.User.Id);
 
 		var description = leaderboard.Count == 0
 			? "No balances found."

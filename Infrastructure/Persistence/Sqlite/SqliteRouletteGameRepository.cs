@@ -39,7 +39,10 @@ public class SqliteRouletteGameRepository : IRouletteGameRepository
 				COUNT(*),
 				COALESCE(SUM(CASE WHEN IsWin = 1 THEN 1 ELSE 0 END), 0),
 				COALESCE(SUM(BetAmount), 0),
-				MAX(COALESCE(BalanceAfterGame, 200), 200),
+				CASE
+					WHEN COALESCE(MAX(BalanceAfterGame), 0) < 200 THEN 200
+					ELSE MAX(BalanceAfterGame)
+				END,
 				COALESCE(MAX(CASE WHEN NetChange > 0 THEN NetChange + BetAmount ELSE 0 END), 0),
 				COALESCE(MIN(CASE WHEN NetChange < 0 THEN NetChange ELSE 0 END), 0)
 			FROM RoulettePlayerResults
