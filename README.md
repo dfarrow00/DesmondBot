@@ -12,6 +12,7 @@ We wanted simple casino-style games we could play in chat without real money, ju
 - Virtual currency/economy system
 - Leaderboard and player stats
 - Automatic daily balance top-up for players with low balance
+- Logging of bot activity and events
 
 ## Tech Stack & Libraries
 - C# / .NET 10
