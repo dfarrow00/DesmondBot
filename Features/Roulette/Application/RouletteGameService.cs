@@ -9,7 +9,7 @@ public class RouletteGameService
 	private RouletteGame? _activeGame;
 	private readonly IEconomyRepository _economyRepository;
 	private readonly IRouletteGameRepository _rouletteGameRepository;
-	private readonly IRouletteMessageService _rouletteMessageService;//TODO: Using a message event system to decouple.
+	private readonly IRouletteMessageService _rouletteMessageService; //TODO: Using a message event system to decouple.
 	private readonly ILogger<RouletteGameService> _logger;
 	private readonly Random _random = new();
 	private readonly SemaphoreSlim _rouletteBetLock = new(1, 1);
@@ -150,10 +150,10 @@ public class RouletteGameService
 	private async Task ScheduleWheelSpinAsync(RouletteGame game, CancellationToken token)
 	{
 		await Task.Delay(TimeSpan.FromSeconds(10), token);
-		_ = SpinWheelAsync(game);
+		_ = SpinWheelAsync(game, token);
 	}
 
-	private async Task SpinWheelAsync(RouletteGame game)
+	private async Task SpinWheelAsync(RouletteGame game, CancellationToken token)
 	{
 		var spinResult = GenerateRouletteSpinResult();
 		var playerResults = GetPlayerResults(game.Bets, spinResult);
@@ -167,7 +167,7 @@ public class RouletteGameService
 
 		await _rouletteGameRepository.SaveGameOutcomeAsync(spinResult, playerResults, DateTimeOffset.UtcNow);
 
-		_logger.LogInformation("Roulette spun {Number} ({Colour}).",spinResult.Number,spinResult.Colour);
+		_logger.LogInformation("Roulette spun {Number} ({Colour}).", spinResult.Number, spinResult.Colour);
 
 		await _rouletteBetLock.WaitAsync();
 		try
