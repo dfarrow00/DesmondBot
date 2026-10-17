@@ -6,13 +6,14 @@ namespace DesmondBot.Features.Roulette.Application;
 
 public class RouletteGameService
 {
-	private RouletteGame? _activeGame;
 	private readonly IEconomyRepository _economyRepository;
 	private readonly IRouletteGameRepository _rouletteGameRepository;
 	private readonly IRouletteMessageService _rouletteMessageService; //TODO: Using a message event system to decouple.
 	private readonly ILogger<RouletteGameService> _logger;
 	private readonly Random _random = new();
 	private readonly SemaphoreSlim _rouletteBetLock = new(1, 1);
+
+	private RouletteGame? _activeGame;
 	private CancellationTokenSource? _gameCts;
 
 	public RouletteGameService(IEconomyRepository economyRepository,
@@ -149,7 +150,7 @@ public class RouletteGameService
 
 	private async Task ScheduleWheelSpinAsync(RouletteGame game, CancellationToken token)
 	{
-		await Task.Delay(TimeSpan.FromSeconds(10), token);
+		await Task.Delay(TimeSpan.FromSeconds(5), token);
 		_ = SpinWheelAsync(game, token);
 	}
 
@@ -164,6 +165,11 @@ public class RouletteGameService
 			WinningBets = playerResults.Where(r => r.IsWin).ToList(),
 			LosingBets = playerResults.Where(r => r.IsWin == false).ToList()
 		};
+
+		foreach (var winningResult in result.WinningBets)
+		{
+			await _economyRepository.AddBalanceAsync(winningResult.UserId, winningResult.Payout);
+		}
 
 		await _rouletteGameRepository.SaveGameOutcomeAsync(spinResult, playerResults, DateTimeOffset.UtcNow);
 

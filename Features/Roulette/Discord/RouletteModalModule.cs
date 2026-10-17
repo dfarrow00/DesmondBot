@@ -31,7 +31,7 @@ public class RouletteModalModule : ComponentInteractionModule<ModalInteractionCo
 
 		if (string.IsNullOrWhiteSpace(amountText) || int.TryParse(amountText, out var amount) == false)
 		{
-			await RespondEphemeralAsync("Failed to place bet: Amount is not a valid integer");
+			await RespondEphemeralAsync(":exclamation: Amount is not a valid integer");
 			return;
 		}
 
@@ -45,7 +45,7 @@ public class RouletteModalModule : ComponentInteractionModule<ModalInteractionCo
 
 		if (Enum.TryParse<RouletteBetType>(betTypeText, out var betType) == false)
 		{
-			await RespondEphemeralAsync("Failed to place bet: Bet type is not valid");
+			await RespondEphemeralAsync(":exclamation: Bet type is not valid");
 			return;
 		}
 
@@ -61,7 +61,7 @@ public class RouletteModalModule : ComponentInteractionModule<ModalInteractionCo
 		{
 			if (int.TryParse(numberText, out var parsedNumber) == false)
 			{
-				await RespondEphemeralAsync("Failed to place bet: Number is not a valid integer");
+				await RespondEphemeralAsync(":exclamation: Number is not a valid integer");
 				return;
 			}
 
@@ -94,12 +94,12 @@ public class RouletteModalModule : ComponentInteractionModule<ModalInteractionCo
 	{
 		return result switch
 		{
-			PlaceBetResult.InsufficientBalance => ":exclamation: Insufficient balance",
+			PlaceBetResult.InsufficientBalance => ":exclamation: Insufficient funds",
 			PlaceBetResult.BettingClosed => ":exclamation: Betting is closed",
 			PlaceBetResult.NoActiveGame => ":exclamation: No active roulette game",
-			PlaceBetResult.AlreadyBet => ":exclamation: You already placed a bet for this game",
+			PlaceBetResult.AlreadyBet => ":exclamation: You've already placed a bet for this game",
 			PlaceBetResult.InvalidAmount => ":exclamation: Amount must be greater than zero",
-			PlaceBetResult.NumberRequired => ":exclamation: Number bet requires a number",
+			PlaceBetResult.NumberRequired => ":exclamation: Number bet type requires a number",
 			PlaceBetResult.InvalidNumber => ":exclamation: Number must be between 0 and 36",
 			_ => ":exclamation: Failed to place bet"
 		};

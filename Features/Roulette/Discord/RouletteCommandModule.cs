@@ -44,7 +44,7 @@ public class RouletteCommandModule : ApplicationCommandModule<ApplicationCommand
 		_rouletteMessageService.RegisterMessage(channelId, messageId);
 	}
 
-	[SlashCommand("stats", "View roulette stats for a player")]
+	[SlashCommand("roulette-stats", "View roulette stats for a player")]
 	public async Task<InteractionMessageProperties> GetRouletteStatsAsync(GuildUser player)
 	{
 		if (player.IsBot)

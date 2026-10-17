@@ -33,7 +33,8 @@ builder.Services.AddDiscordGateway(options =>
 .AddComponentInteractions<ModalInteraction, ModalInteractionContext>()
 .AddGatewayHandlers(typeof(Program).Assembly);
 
-builder.Services.AddSingleton(new SqliteConnectionFactory(databasePath));
+builder.Services.AddSingleton(provider =>
+	new SqliteConnectionFactory(databasePath, provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SqliteConnectionFactory>>()));
 builder.Services.AddSingleton<SqliteDatabaseInitializer>();
 
 builder.Services.AddSingleton<RouletteGameService>();

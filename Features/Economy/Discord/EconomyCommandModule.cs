@@ -28,7 +28,7 @@ public class EconomyCommandModule : ApplicationCommandModule<ApplicationCommandC
 		};
 	}
 
-	[SlashCommand("send-money", "Send money to another user")]
+	[SlashCommand("send-money", "Send money to another player")]
 	public async Task<InteractionMessageProperties> SendMoneyAsync(GuildUser recipient, int amount)
 	{
 		if (recipient.Id == Context.User.Id)
