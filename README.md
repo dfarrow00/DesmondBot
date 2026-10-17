@@ -12,10 +12,11 @@ We wanted simple casino-style games we could play in chat without real money, ju
 - Virtual currency/economy system
 - Leaderboard and player stats
 
-## Tech Stack
-- .NET 10
-- C#
-- NetCord (Discord bot framework)
+## Tech Stack & Libraries
+- C# / .NET 10
+- NetCord
+- Sqlite
+- Serilog
 
 ## Running the Bot Locally
 If you plan to run this locally, make sure you have the .NET 10 SDK installed.
