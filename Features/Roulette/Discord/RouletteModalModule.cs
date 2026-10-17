@@ -9,9 +9,9 @@ namespace DesmondBot.Features.Roulette.Discord;
 public class RouletteModalModule : ComponentInteractionModule<ModalInteractionContext>
 {
 	private readonly RouletteGameService _rouletteGameService;
-	private readonly RouletteMessageService _rouletteMessageService;
+	private readonly IRouletteMessageService _rouletteMessageService;
 
-	public RouletteModalModule(RouletteGameService rouletteGameService, RouletteMessageService rouletteMessageService)
+	public RouletteModalModule(RouletteGameService rouletteGameService, IRouletteMessageService rouletteMessageService)
 	{
 		_rouletteGameService = rouletteGameService;
 		_rouletteMessageService = rouletteMessageService;

@@ -8,11 +8,11 @@ namespace DesmondBot.Features.Roulette.Discord;
 public class RouletteCommandModule : ApplicationCommandModule<ApplicationCommandContext>
 {
 	private readonly RouletteGameService _rouletteGameService;
-	private readonly RouletteMessageService _rouletteMessageService;
+	private readonly IRouletteMessageService _rouletteMessageService;
 	private readonly IRouletteGameRepository _rouletteGameRepository;
 
 	public RouletteCommandModule(RouletteGameService rouletteGameService,
-		RouletteMessageService rouletteMessageService,
+		IRouletteMessageService rouletteMessageService,
 		IRouletteGameRepository rouletteGameRepository)
 	{
 		_rouletteGameService = rouletteGameService;

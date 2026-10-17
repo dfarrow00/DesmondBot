@@ -1,9 +1,10 @@
+using DesmondBot.Features.Roulette.Application;
 using DesmondBot.Features.Roulette.Domain;
 using NetCord.Rest;
 
 namespace DesmondBot.Features.Roulette.Discord;
 
-public class RouletteMessageService
+public class RouletteMessageService : IRouletteMessageService
 {
 	private readonly RestClient _restClient;
 	private ulong? _channelId;

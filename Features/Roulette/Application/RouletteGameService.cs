@@ -1,5 +1,4 @@
 ﻿using DesmondBot.Features.Economy.Application;
-using DesmondBot.Features.Roulette.Discord;
 using DesmondBot.Features.Roulette.Domain;
 using Microsoft.Extensions.Logging;
 
@@ -10,7 +9,7 @@ public class RouletteGameService
 	private RouletteGame? _activeGame;
 	private readonly IEconomyRepository _economyRepository;
 	private readonly IRouletteGameRepository _rouletteGameRepository;
-	private readonly RouletteMessageService _rouletteMessageService;
+	private readonly IRouletteMessageService _rouletteMessageService;//TODO: Using a message event system to decouple.
 	private readonly ILogger<RouletteGameService> _logger;
 	private readonly Random _random = new();
 	private readonly SemaphoreSlim _rouletteBetLock = new(1, 1);
@@ -18,7 +17,7 @@ public class RouletteGameService
 
 	public RouletteGameService(IEconomyRepository economyRepository,
 		IRouletteGameRepository rouletteGameRepository,
-		RouletteMessageService rouletteMessageService,
+		IRouletteMessageService rouletteMessageService,
 		ILogger<RouletteGameService> logger)
 	{
 		_economyRepository = economyRepository;
