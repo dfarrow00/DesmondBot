@@ -17,10 +17,6 @@ We wanted simple casino-style games we could play in chat without real money, ju
 - C#
 - NetCord (Discord bot framework)
 
-## Project Goals
-- Build a fun and stable bot for personal/small community use
-- Practice backend/game logic design in a real project
-
 ## Running the Bot Locally
 If you plan to run this locally, make sure you have the .NET 10 SDK installed.
 
