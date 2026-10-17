@@ -1,1 +1,33 @@
 # DesmondBot
+
+A small Discord bot project focused on casino-style mini games using virtual currency.
+
+## About
+
+DesmondBot started as a fun side project for a Discord server with me and my friends.
+We wanted simple casino-style games we could play in chat without real money, just for competition and fun.
+
+## Features
+- Casino-style game commands
+- Virtual currency/economy system
+- Leaderboard and player stats
+
+## Tech Stack
+- .NET 10
+- C#
+- NetCord (Discord bot framework)
+
+## Project Goals
+- Build a fun and stable bot for personal/small community use
+- Practice backend/game logic design in a real project
+
+## Running the Bot Locally
+If you plan to run this locally, make sure you have the .NET 10 SDK installed.
+
+1. Clone the repository
+2. Add you bot token to appsettings.json
+3. Build and run the solution in Visual Studio or via the .NET CLI
+
+## Roadmap
+- Blackjack game mode
+- Purchasable prizes
