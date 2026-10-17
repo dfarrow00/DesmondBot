@@ -15,7 +15,9 @@ public class EconomyGuildCreateHandler : IGuildCreateGatewayHandler
 
 	public async ValueTask HandleAsync(GuildCreateEventArgs arg)
 	{
-		var userIds = arg.Guild!.Users.Where(u => u.Value.IsBot == false).Select(u => u.Key);
+		if (arg.Guild == null) return;
+
+		var userIds = arg.Guild.Users.Where(u => u.Value.IsBot == false).Select(u => u.Key);
 		await _economyRepository.AddUsersAsync(userIds);
 	}
 }

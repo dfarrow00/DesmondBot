@@ -1,4 +1,5 @@
 ﻿using DesmondBot.Features.Economy.Application;
+using DesmondBot.Features.Economy.Domain;
 using Microsoft.Data.Sqlite;
 
 namespace DesmondBot.Infrastructure.Persistence.Sqlite;
@@ -81,7 +82,7 @@ public class SqliteEconomyRepository : IEconomyRepository
 		return Convert.ToInt32(result);
 	}
 
-	public async Task<List<(ulong UserId, int Balance)>> GetLeaderboardAsync()
+	public async Task<List<LeaderboardEntry>> GetLeaderboardAsync()
 	{
 		await using var connection = _connectionFactory.CreateConnection();
 		await connection.OpenAsync();
@@ -94,13 +95,13 @@ public class SqliteEconomyRepository : IEconomyRepository
 			";
 
 		await using var reader = await command.ExecuteReaderAsync();
-		var leaderboard = new List<(ulong UserId, int Balance)>();
+		var leaderboard = new List<LeaderboardEntry>();
 
 		while (await reader.ReadAsync())
 		{
 			var userId = (ulong)reader.GetInt64(0);
 			var balance = reader.GetInt32(1);
-			leaderboard.Add((userId, balance));
+			leaderboard.Add(new LeaderboardEntry { UserId = userId, Balance = balance });
 		}
 
 		return leaderboard;

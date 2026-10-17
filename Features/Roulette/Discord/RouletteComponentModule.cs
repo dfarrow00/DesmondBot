@@ -1,5 +1,4 @@
 ﻿using DesmondBot.Features.Economy.Application;
-using DesmondBot.Features.Roulette.Application;
 using NetCord;
 using NetCord.Rest;
 using NetCord.Services.ComponentInteractions;
@@ -8,12 +7,10 @@ namespace DesmondBot.Features.Roulette.Discord;
 
 public class RouletteComponentModule : ComponentInteractionModule<ButtonInteractionContext>
 {
-	private readonly RouletteGameService _rouletteGameService;
 	private readonly IEconomyRepository _economyRepository;
 
-	public RouletteComponentModule(RouletteGameService rouletteGameService, IEconomyRepository economyRepository)
+	public RouletteComponentModule(IEconomyRepository economyRepository)
 	{
-		_rouletteGameService = rouletteGameService;
 		_economyRepository = economyRepository;
 	}
 

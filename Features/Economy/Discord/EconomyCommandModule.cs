@@ -23,7 +23,7 @@ public class EconomyCommandModule : ApplicationCommandModule<ApplicationCommandC
 		var balance = await _economyRepository.GetBalanceAsync(Context.User.Id);
 		return new InteractionMessageProperties
 		{
-			Content = $"Balance: {balance}",
+			Content = $":money_with_wings: {balance}",
 			Flags = MessageFlags.Ephemeral
 		};
 	}
