@@ -54,7 +54,7 @@ public static class RouletteMessageBuilder
 		return new EmbedProperties
 		{
 			Title = $":slot_machine: Roulette #{game.Id}",
-			Description = ":no_entry_sign: Bets are now closed.\n\n:cyclone: The wheel is spinning...",
+			Description = ":no_entry_sign: **Bets are now closed** :no_entry_sign:\n\nThe wheel is spinning...",
 			Color = new Color(0x176B45),
 			Fields = new List<EmbedFieldProperties>
 			{
