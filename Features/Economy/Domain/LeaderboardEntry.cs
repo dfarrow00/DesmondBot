@@ -3,5 +3,5 @@
 public sealed record LeaderboardEntry
 {
 	public ulong UserId { get; init; }
-	public int Balance { get; init; }
+	public int Value { get; init; }
 }

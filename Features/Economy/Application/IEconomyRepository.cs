@@ -9,7 +9,7 @@ public interface IEconomyRepository
 	Task AddBalanceAsync(ulong userId, int amount);
 
 	Task<int> GetBalanceAsync(ulong userId);
-	Task<List<LeaderboardEntry>> GetLeaderboardAsync();
+	Task<EconomyLeaderboard> GetLeaderboardAsync();
 
 	Task<bool> TryRemoveBalanceAsync(ulong userId, int amount);
 	Task<bool> TryTransferBalanceAsync(ulong senderId, ulong recipientId, int amount);

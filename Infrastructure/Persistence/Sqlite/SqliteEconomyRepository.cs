@@ -82,29 +82,132 @@ public class SqliteEconomyRepository : IEconomyRepository
 		return Convert.ToInt32(result);
 	}
 
-	public async Task<List<LeaderboardEntry>> GetLeaderboardAsync()
+	public async Task<EconomyLeaderboard> GetLeaderboardAsync()
 	{
 		await using var connection = _connectionFactory.CreateConnection();
 		await connection.OpenAsync();
 
-		await using var command = connection.CreateCommand();
-		command.CommandText = @"
+		var currentBalance = await GetLeaderboardEntriesAsync(connection, @"
 			SELECT UserId, Balance
 			FROM UserBalances
 			ORDER BY Balance DESC, UserId ASC;
-			";
+			");
+
+		//TODO: Domain seperation issue here by querying the RoulettePlayerResults table in the economy repository.
+		var peakBalance = await GetLeaderboardEntriesAsync(connection, @"
+			SELECT
+				ub.UserId,
+				CASE
+					WHEN COALESCE(MAX(rpr.BalanceAfterGame), 0) < 200 THEN 200
+					ELSE MAX(rpr.BalanceAfterGame)
+				END AS Value
+			FROM UserBalances ub
+			LEFT JOIN RoulettePlayerResults rpr ON rpr.UserId = ub.UserId
+			GROUP BY ub.UserId
+			ORDER BY Value DESC, ub.UserId ASC;
+			");
+
+		var biggestWin = await GetLeaderboardEntriesAsync(connection, @"
+			SELECT
+				ub.UserId,
+				COALESCE(MAX(CASE WHEN rpr.NetChange > 0 THEN rpr.NetChange + rpr.BetAmount ELSE 0 END), 0) AS Value
+			FROM UserBalances ub
+			LEFT JOIN RoulettePlayerResults rpr ON rpr.UserId = ub.UserId
+			GROUP BY ub.UserId
+			ORDER BY Value DESC, ub.UserId ASC;
+			");
+
+		var longestWinStreak = await GetLongestWinStreakLeaderboardAsync(connection, currentBalance);
+
+		return new EconomyLeaderboard
+		{
+			CurrentBalance = currentBalance,
+			PeakBalance = peakBalance,
+			LongestWinStreak = longestWinStreak,
+			BiggestWin = biggestWin
+		};
+	}
+
+	private static async Task<List<LeaderboardEntry>> GetLeaderboardEntriesAsync(SqliteConnection connection, string commandText)
+	{
+		await using var command = connection.CreateCommand();
+		command.CommandText = commandText;
 
 		await using var reader = await command.ExecuteReaderAsync();
 		var leaderboard = new List<LeaderboardEntry>();
 
 		while (await reader.ReadAsync())
 		{
-			var userId = (ulong)reader.GetInt64(0);
-			var balance = reader.GetInt32(1);
-			leaderboard.Add(new LeaderboardEntry { UserId = userId, Balance = balance });
+			leaderboard.Add(new LeaderboardEntry
+			{
+				UserId = (ulong)reader.GetInt64(0),
+				Value = reader.GetInt32(1)
+			});
 		}
 
 		return leaderboard;
+	}
+
+	private static async Task<List<LeaderboardEntry>> GetLongestWinStreakLeaderboardAsync(
+		SqliteConnection connection,
+		List<LeaderboardEntry> currentBalance)
+	{
+		var longestWinStreakByUserId = currentBalance.ToDictionary(entry => entry.UserId, _ => 0);
+
+		await using var command = connection.CreateCommand();
+		command.CommandText = @"
+			SELECT UserId, IsWin
+			FROM RoulettePlayerResults
+			ORDER BY UserId ASC, GameId ASC;
+			";
+
+		await using var reader = await command.ExecuteReaderAsync();
+
+		ulong? currentUserId = null;
+		var currentStreak = 0;
+		var longestStreak = 0;
+
+		while (await reader.ReadAsync())
+		{
+			var userId = (ulong)reader.GetInt64(0);
+			var isWin = reader.GetInt32(1) == 1;
+
+			if (currentUserId != userId)
+			{
+				if (currentUserId.HasValue)
+				{
+					longestWinStreakByUserId[currentUserId.Value] = longestStreak;
+				}
+
+				currentUserId = userId;
+				currentStreak = 0;
+				longestStreak = 0;
+			}
+
+			if (isWin)
+			{
+				currentStreak++;
+				if (currentStreak > longestStreak)
+				{
+					longestStreak = currentStreak;
+				}
+			}
+			else
+			{
+				currentStreak = 0;
+			}
+		}
+
+		if (currentUserId.HasValue)
+		{
+			longestWinStreakByUserId[currentUserId.Value] = longestStreak;
+		}
+
+		return longestWinStreakByUserId
+			.Select(entry => new LeaderboardEntry { UserId = entry.Key, Value = entry.Value })
+			.OrderByDescending(entry => entry.Value)
+			.ThenBy(entry => entry.UserId)
+			.ToList();
 	}
 
 	public async Task<bool> TryRemoveBalanceAsync(ulong userId, int amount)

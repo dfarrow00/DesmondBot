@@ -1,4 +1,4 @@
-﻿using DesmondBot.Features.Economy.Application;
+using DesmondBot.Features.Economy.Application;
 using Microsoft.Extensions.Logging;
 using NetCord;
 using NetCord.Rest;
@@ -86,29 +86,7 @@ public class EconomyCommandModule : ApplicationCommandModule<ApplicationCommandC
 	{
 		_logger.LogInformation("/leaderboard requested by {GlobalName}.", Context.User.GlobalName);
 		var leaderboard = await _economyRepository.GetLeaderboardAsync();
-
-		var description = leaderboard.Count == 0
-			? "No balances found."
-			: string.Join("\n", leaderboard.Select((entry, index) =>
-			{
-				var position = index switch
-				{
-					0 => ":first_place:",
-					1 => ":second_place:",
-					2 => ":third_place:",
-					_ => $"#{index + 1}"
-				};
-
-				return $"{position} <@{entry.UserId}> — :money_with_wings: {entry.Balance}";
-			}));
-
-		var embed = new EmbedProperties
-		{
-			Title = ":trophy: Leaderboard",
-			Description = description,
-			Color = new Color(0xFFD700)
-		};
-
-		return new InteractionMessageProperties().WithEmbeds(new[] { embed });
+		var embed = EconomyMessageBuilder.CreateLeaderboardEmbed(leaderboard);
+		return new InteractionMessageProperties().WithEmbeds([embed]);
 	}
 }
