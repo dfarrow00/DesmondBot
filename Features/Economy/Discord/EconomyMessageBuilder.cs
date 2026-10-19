@@ -18,25 +18,19 @@ public static class EconomyMessageBuilder
 				{
 					Name = "Current Balance",
 					Value = CreateLeaderboardEntries(leaderboard.CurrentBalance, value => $":money_with_wings: {value}"),
-					Inline = true
+					Inline = false
 				},
 				new EmbedFieldProperties
 				{
 					Name = "Peak Balance",
 					Value = CreateLeaderboardEntries(leaderboard.PeakBalance, value => $":moneybag: {value}"),
-					Inline = true
-				},
-				new EmbedFieldProperties
-				{
-					Name = "Longest Win Streak",
-					Value = CreateLeaderboardEntries(leaderboard.LongestWinStreak, value => $":fire: {value.ToString()}"),
-					Inline = true
+					Inline = false
 				},
 				new EmbedFieldProperties
 				{
 					Name = "Biggest Win",
 					Value = CreateLeaderboardEntries(leaderboard.BiggestWin, value => $":money_with_wings: +{value}"),
-					Inline = true
+					Inline = false
 				}
 			]
 		};
