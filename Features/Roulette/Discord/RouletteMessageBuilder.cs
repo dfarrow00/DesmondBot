@@ -135,6 +135,54 @@ public static class RouletteMessageBuilder
 		};
 	}
 
+	public static EmbedProperties CreateLeaderboardEmbed(RouletteLeaderboard leaderboard)
+	{
+		return new EmbedProperties
+		{
+			Title = ":slot_machine: Roulette Leaderboard",
+			Color = new Color(0xFFD700),
+			Fields =
+			[
+				new EmbedFieldProperties
+				{
+					Name = "Biggest Win",
+					Value = CreateLeaderboardEntries(leaderboard.BiggestWin, value => $":money_with_wings: +{value}"),
+					Inline = false
+				},
+				new EmbedFieldProperties
+				{
+					Name = "Biggest Loss",
+					Value = CreateLeaderboardEntries(leaderboard.BiggestLoss, value => $":money_with_wings: {value}"),
+					Inline = false
+				},
+				new EmbedFieldProperties
+				{
+					Name = "Longest Win Streak",
+					Value = CreateLeaderboardEntries(leaderboard.LongestWinStreak, value => $":fire: {value}"),
+					Inline = false
+				}
+			]
+		};
+	}
+
+	private static string CreateLeaderboardEntries(IReadOnlyList<RouletteLeaderboardEntry> entries, Func<int, string> formatValue)
+	{
+		return entries.Count == 0
+			? "No balances found."
+			: string.Join("\n", entries.Select((entry, index) =>
+			{
+				var position = index switch
+				{
+					0 => ":first_place:",
+					1 => ":second_place:",
+					2 => ":third_place:",
+					_ => $"#{index + 1}"
+				};
+
+				return $"{position} <@{entry.UserId}> — {formatValue(entry.Value)}";
+			}));
+	}
+
 	private static string GetPlacedBetsString(List<RouletteBet> bets)
 	{
 		return bets.Count == 0

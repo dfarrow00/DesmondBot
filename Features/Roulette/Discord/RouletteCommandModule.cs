@@ -69,4 +69,13 @@ public class RouletteCommandModule : ApplicationCommandModule<ApplicationCommand
 
 		return new InteractionMessageProperties().WithEmbeds(new[] { embed });
 	}
+
+	[SlashCommand("roulette-leaderboard", "View the roulette leaderboard")]
+	public async Task<InteractionMessageProperties> GetRouletteLeaderboardAsync()
+	{
+		_logger.LogInformation("/roulette-leaderboard requested by {GlobalName}", Context.User.GlobalName);
+		var leaderboard = await _rouletteGameRepository.GetLeaderboardAsync();
+		var embed = RouletteMessageBuilder.CreateLeaderboardEmbed(leaderboard);
+		return new InteractionMessageProperties().WithEmbeds(new[] { embed });
+	}
 }

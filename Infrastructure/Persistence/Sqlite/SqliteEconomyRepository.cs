@@ -21,13 +21,14 @@ public class SqliteEconomyRepository : IEconomyRepository
 
 		await using var command = connection.CreateCommand();
 		command.CommandText = @"
-            INSERT INTO UserBalances (UserId, Balance)
-            VALUES (@userId, @balance)
-            ON CONFLICT(UserId) DO NOTHING;
-            ";
+			INSERT INTO UserBalances (UserId, Balance, PeakBalance)
+			VALUES (@userId, @balance, @peakBalance)
+			ON CONFLICT(UserId) DO NOTHING;
+			";
 
 		command.Parameters.AddWithValue("@userId", userId);
 		command.Parameters.AddWithValue("@balance", _initialBalance);
+		command.Parameters.AddWithValue("@peakBalance", _initialBalance);
 
 		await command.ExecuteNonQueryAsync();
 	}
@@ -42,17 +43,19 @@ public class SqliteEconomyRepository : IEconomyRepository
 		await using var command = connection.CreateCommand();
 
 		command.CommandText = @"
-			INSERT INTO UserBalances (UserId, Balance)
-			VALUES (@userId, @balance)
+			INSERT INTO UserBalances (UserId, Balance, PeakBalance)
+			VALUES (@userId, @balance, @peakBalance)
 			ON CONFLICT(UserId) DO NOTHING;
-        ";
+		";
 
 		command.Transaction = transaction;
 
 		var userIdParameter = command.Parameters.Add("@userId", SqliteType.Integer);
 		var balanceParameter = command.Parameters.Add("@balance", SqliteType.Integer);
+		var peakBalanceParameter = command.Parameters.Add("@peakBalance", SqliteType.Integer);
 
 		balanceParameter.Value = _initialBalance;
+		peakBalanceParameter.Value = _initialBalance;
 
 		foreach (var userId in userIds)
 		{
@@ -93,38 +96,16 @@ public class SqliteEconomyRepository : IEconomyRepository
 			ORDER BY Balance DESC, UserId ASC;
 			");
 
-		//TODO: Domain seperation issue here by querying the RoulettePlayerResults table in the economy repository.
 		var peakBalance = await GetLeaderboardEntriesAsync(connection, @"
-			SELECT
-				ub.UserId,
-				CASE
-					WHEN COALESCE(MAX(rpr.BalanceAfterGame), 0) < 200 THEN 200
-					ELSE MAX(rpr.BalanceAfterGame)
-				END AS Value
-			FROM UserBalances ub
-			LEFT JOIN RoulettePlayerResults rpr ON rpr.UserId = ub.UserId
-			GROUP BY ub.UserId
-			ORDER BY Value DESC, ub.UserId ASC;
+			SELECT UserId, PeakBalance
+			FROM UserBalances
+			ORDER BY PeakBalance DESC, UserId ASC;
 			");
-
-		var biggestWin = await GetLeaderboardEntriesAsync(connection, @"
-			SELECT
-				ub.UserId,
-				COALESCE(MAX(CASE WHEN rpr.NetChange > 0 THEN rpr.NetChange + rpr.BetAmount ELSE 0 END), 0) AS Value
-			FROM UserBalances ub
-			LEFT JOIN RoulettePlayerResults rpr ON rpr.UserId = ub.UserId
-			GROUP BY ub.UserId
-			ORDER BY Value DESC, ub.UserId ASC;
-			");
-
-		var longestWinStreak = await GetLongestWinStreakLeaderboardAsync(connection, currentBalance);
 
 		return new EconomyLeaderboard
 		{
 			CurrentBalance = currentBalance,
-			PeakBalance = peakBalance,
-			LongestWinStreak = longestWinStreak,
-			BiggestWin = biggestWin
+			PeakBalance = peakBalance
 		};
 	}
 
@@ -146,68 +127,6 @@ public class SqliteEconomyRepository : IEconomyRepository
 		}
 
 		return leaderboard;
-	}
-
-	private static async Task<List<LeaderboardEntry>> GetLongestWinStreakLeaderboardAsync(
-		SqliteConnection connection,
-		List<LeaderboardEntry> currentBalance)
-	{
-		var longestWinStreakByUserId = currentBalance.ToDictionary(entry => entry.UserId, _ => 0);
-
-		await using var command = connection.CreateCommand();
-		command.CommandText = @"
-			SELECT UserId, IsWin
-			FROM RoulettePlayerResults
-			ORDER BY UserId ASC, GameId ASC;
-			";
-
-		await using var reader = await command.ExecuteReaderAsync();
-
-		ulong? currentUserId = null;
-		var currentStreak = 0;
-		var longestStreak = 0;
-
-		while (await reader.ReadAsync())
-		{
-			var userId = (ulong)reader.GetInt64(0);
-			var isWin = reader.GetInt32(1) == 1;
-
-			if (currentUserId != userId)
-			{
-				if (currentUserId.HasValue)
-				{
-					longestWinStreakByUserId[currentUserId.Value] = longestStreak;
-				}
-
-				currentUserId = userId;
-				currentStreak = 0;
-				longestStreak = 0;
-			}
-
-			if (isWin)
-			{
-				currentStreak++;
-				if (currentStreak > longestStreak)
-				{
-					longestStreak = currentStreak;
-				}
-			}
-			else
-			{
-				currentStreak = 0;
-			}
-		}
-
-		if (currentUserId.HasValue)
-		{
-			longestWinStreakByUserId[currentUserId.Value] = longestStreak;
-		}
-
-		return longestWinStreakByUserId
-			.Select(entry => new LeaderboardEntry { UserId = entry.Key, Value = entry.Value })
-			.OrderByDescending(entry => entry.Value)
-			.ThenBy(entry => entry.UserId)
-			.ToList();
 	}
 
 	public async Task<bool> TryRemoveBalanceAsync(ulong userId, int amount)
@@ -238,7 +157,9 @@ public class SqliteEconomyRepository : IEconomyRepository
 		await using var command = connection.CreateCommand();
 		command.CommandText = @"
 			UPDATE UserBalances
-			SET Balance = Balance + @amount
+			SET
+				Balance = Balance + @amount,
+				PeakBalance = MAX(PeakBalance, Balance + @amount)
 			WHERE UserId = @userId;
 			";
 
@@ -278,7 +199,9 @@ public class SqliteEconomyRepository : IEconomyRepository
 		creditCommand.Transaction = transaction;
 		creditCommand.CommandText = @"
 			UPDATE UserBalances
-			SET Balance = Balance + @amount
+			SET
+				Balance = Balance + @amount,
+				PeakBalance = MAX(PeakBalance, Balance + @amount)
 			WHERE UserId = @recipientId;
 			";
 
@@ -298,7 +221,9 @@ public class SqliteEconomyRepository : IEconomyRepository
 		await using var command = connection.CreateCommand();
 		command.CommandText = @"
 			UPDATE UserBalances
-			SET Balance = @minimumBalance
+			SET
+				Balance = @minimumBalance,
+				PeakBalance = MAX(PeakBalance, @minimumBalance)
 			WHERE Balance < @minimumBalance;
 			";
 

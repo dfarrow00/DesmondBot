@@ -6,11 +6,11 @@ namespace DesmondBot.Features.Economy.Discord;
 
 public static class EconomyMessageBuilder
 {
-	public static EmbedProperties CreateLeaderboardEmbed(EconomyLeaderboard leaderboard)
+	public static EmbedProperties CreateMoneyLeaderboardEmbed(EconomyLeaderboard leaderboard)
 	{
 		return new EmbedProperties
 		{
-			Title = ":trophy: Leaderboard",
+			Title = ":moneybag: Money Leaderboard",
 			Color = new Color(0xFFD700),
 			Fields =
 			[
@@ -24,12 +24,6 @@ public static class EconomyMessageBuilder
 				{
 					Name = "Peak Balance",
 					Value = CreateLeaderboardEntries(leaderboard.PeakBalance, value => $":moneybag: {value}"),
-					Inline = false
-				},
-				new EmbedFieldProperties
-				{
-					Name = "Biggest Win",
-					Value = CreateLeaderboardEntries(leaderboard.BiggestWin, value => $":money_with_wings: +{value}"),
 					Inline = false
 				}
 			]

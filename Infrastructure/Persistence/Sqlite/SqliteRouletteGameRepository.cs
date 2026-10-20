@@ -28,6 +28,41 @@ public class SqliteRouletteGameRepository : IRouletteGameRepository
 		return Convert.ToInt32(result);
 	}
 
+	public async Task<RouletteLeaderboard> GetLeaderboardAsync()
+	{
+		await using var connection = _connectionFactory.CreateConnection();
+		await connection.OpenAsync();
+
+		var biggestWin = await GetLeaderboardEntriesAsync(connection, @"
+			SELECT
+				ub.UserId,
+				COALESCE(MAX(CASE WHEN rpr.NetChange > 0 THEN rpr.NetChange + rpr.BetAmount ELSE 0 END), 0) AS Value
+			FROM UserBalances ub
+			LEFT JOIN RoulettePlayerResults rpr ON rpr.UserId = ub.UserId
+			GROUP BY ub.UserId
+			ORDER BY Value DESC, ub.UserId ASC;
+			");
+
+		var biggestLoss = await GetLeaderboardEntriesAsync(connection, @"
+			SELECT
+				ub.UserId,
+				COALESCE(MIN(CASE WHEN rpr.NetChange < 0 THEN rpr.NetChange ELSE 0 END), 0) AS Value
+			FROM UserBalances ub
+			LEFT JOIN RoulettePlayerResults rpr ON rpr.UserId = ub.UserId
+			GROUP BY ub.UserId
+			ORDER BY Value ASC, ub.UserId ASC;
+			");
+
+		var longestWinStreak = await GetLongestWinStreakLeaderboardAsync(connection);
+
+		return new RouletteLeaderboard
+		{
+			BiggestWin = biggestWin,
+			BiggestLoss = biggestLoss,
+			LongestWinStreak = longestWinStreak
+		};
+	}
+
 	public async Task<RoulettePlayerStats> GetPlayerStatsAsync(ulong userId)
 	{
 		await using var connection = _connectionFactory.CreateConnection();
@@ -39,10 +74,7 @@ public class SqliteRouletteGameRepository : IRouletteGameRepository
 				COUNT(*),
 				COALESCE(SUM(CASE WHEN IsWin = 1 THEN 1 ELSE 0 END), 0),
 				COALESCE(SUM(BetAmount), 0),
-				CASE
-					WHEN COALESCE(MAX(BalanceAfterGame), 0) < 200 THEN 200
-					ELSE MAX(BalanceAfterGame)
-				END,
+				COALESCE((SELECT PeakBalance FROM UserBalances WHERE UserId = @userId), 200),
 				COALESCE(MAX(CASE WHEN NetChange > 0 THEN NetChange + BetAmount ELSE 0 END), 0),
 				COALESCE(MIN(CASE WHEN NetChange < 0 THEN NetChange ELSE 0 END), 0)
 			FROM RoulettePlayerResults
@@ -104,6 +136,103 @@ public class SqliteRouletteGameRepository : IRouletteGameRepository
 			LongestWinningStreak = longestStreak,
 			CurrentWinningStreak = currentStreak
 		};
+	}
+
+	private static async Task<List<RouletteLeaderboardEntry>> GetLeaderboardEntriesAsync(SqliteConnection connection, string commandText)
+	{
+		await using var command = connection.CreateCommand();
+		command.CommandText = commandText;
+
+		await using var reader = await command.ExecuteReaderAsync();
+		var leaderboard = new List<RouletteLeaderboardEntry>();
+
+		while (await reader.ReadAsync())
+		{
+			leaderboard.Add(new RouletteLeaderboardEntry
+			{
+				UserId = (ulong)reader.GetInt64(0),
+				Value = reader.GetInt32(1)
+			});
+		}
+
+		return leaderboard;
+	}
+
+	private static async Task<List<RouletteLeaderboardEntry>> GetLongestWinStreakLeaderboardAsync(SqliteConnection connection)
+	{
+		var userIds = new List<ulong>();
+
+		await using (var userCommand = connection.CreateCommand())
+		{
+			userCommand.CommandText = @"
+				SELECT UserId
+				FROM UserBalances
+				ORDER BY UserId ASC;
+				";
+
+			await using var userReader = await userCommand.ExecuteReaderAsync();
+			while (await userReader.ReadAsync())
+			{
+				userIds.Add((ulong)userReader.GetInt64(0));
+			}
+		}
+
+		var longestWinStreakByUserId = userIds.ToDictionary(userId => userId, _ => 0);
+
+		await using var command = connection.CreateCommand();
+		command.CommandText = @"
+			SELECT UserId, IsWin
+			FROM RoulettePlayerResults
+			ORDER BY UserId ASC, GameId ASC;
+			";
+
+		await using var reader = await command.ExecuteReaderAsync();
+
+		ulong? currentUserId = null;
+		var currentStreak = 0;
+		var longestStreak = 0;
+
+		while (await reader.ReadAsync())
+		{
+			var userId = (ulong)reader.GetInt64(0);
+			var isWin = reader.GetInt32(1) == 1;
+
+			if (currentUserId != userId)
+			{
+				if (currentUserId.HasValue)
+				{
+					longestWinStreakByUserId[currentUserId.Value] = longestStreak;
+				}
+
+				currentUserId = userId;
+				currentStreak = 0;
+				longestStreak = 0;
+			}
+
+			if (isWin)
+			{
+				currentStreak++;
+				if (currentStreak > longestStreak)
+				{
+					longestStreak = currentStreak;
+				}
+			}
+			else
+			{
+				currentStreak = 0;
+			}
+		}
+
+		if (currentUserId.HasValue)
+		{
+			longestWinStreakByUserId[currentUserId.Value] = longestStreak;
+		}
+
+		return longestWinStreakByUserId
+			.Select(entry => new RouletteLeaderboardEntry { UserId = entry.Key, Value = entry.Value })
+			.OrderByDescending(entry => entry.Value)
+			.ThenBy(entry => entry.UserId)
+			.ToList();
 	}
 
 	public async Task SaveGameOutcomeAsync(RouletteSpinResult spinResult,

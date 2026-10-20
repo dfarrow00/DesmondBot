@@ -14,12 +14,13 @@ public class SqliteDatabaseInitializer
 		await using var connection = _connectionFactory.CreateConnection();
 		await connection.OpenAsync();
 
-		await using var command = connection.CreateCommand();
-		command.CommandText = @"
+		await using var createCommand = connection.CreateCommand();
+		createCommand.CommandText = @"
 			CREATE TABLE IF NOT EXISTS UserBalances
 			(
 				UserId INTEGER PRIMARY KEY,
-				Balance INTEGER NOT NULL
+				Balance INTEGER NOT NULL,
+				PeakBalance INTEGER NOT NULL DEFAULT 200
 			);
 
 			CREATE TABLE IF NOT EXISTS RouletteGames
@@ -45,6 +46,6 @@ public class SqliteDatabaseInitializer
 				FOREIGN KEY(GameId) REFERENCES RouletteGames(Id)
 			);";
 
-		await command.ExecuteNonQueryAsync();
+		await createCommand.ExecuteNonQueryAsync();
 	}
 }

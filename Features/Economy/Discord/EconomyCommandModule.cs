@@ -81,12 +81,12 @@ public class EconomyCommandModule : ApplicationCommandModule<ApplicationCommandC
 		};
 	}
 
-	[SlashCommand("leaderboard", "View the money leaderboard")]
-	public async Task<InteractionMessageProperties> GetLeaderboardAsync()
+	[SlashCommand("money-leaderboard", "View the money leaderboard")]
+	public async Task<InteractionMessageProperties> GetMoneyLeaderboardAsync()
 	{
-		_logger.LogInformation("/leaderboard requested by {GlobalName}.", Context.User.GlobalName);
+		_logger.LogInformation("/money-leaderboard requested by {GlobalName}.", Context.User.GlobalName);
 		var leaderboard = await _economyRepository.GetLeaderboardAsync();
-		var embed = EconomyMessageBuilder.CreateLeaderboardEmbed(leaderboard);
+		var embed = EconomyMessageBuilder.CreateMoneyLeaderboardEmbed(leaderboard);
 		return new InteractionMessageProperties().WithEmbeds([embed]);
 	}
 }
