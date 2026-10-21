@@ -1,4 +1,5 @@
 using DesmondBot.Features.Economy.Application;
+using DesmondBot.Features.Economy.Domain;
 using Microsoft.Extensions.Logging;
 using NetCord;
 using NetCord.Rest;
@@ -9,11 +10,13 @@ namespace DesmondBot.Features.Economy.Discord;
 public class EconomyCommandModule : ApplicationCommandModule<ApplicationCommandContext>
 {
 	private readonly IEconomyRepository _economyRepository;
+	private readonly EconomyService _economyService;
 	private readonly ILogger<EconomyCommandModule> _logger;
 
-	public EconomyCommandModule(IEconomyRepository economyRepository, ILogger<EconomyCommandModule> logger)
+	public EconomyCommandModule(IEconomyRepository economyRepository, EconomyService economyService, ILogger<EconomyCommandModule> logger)
 	{
 		_economyRepository = economyRepository;
+		_economyService = economyService;
 		_logger = logger;
 	}
 
@@ -26,6 +29,37 @@ public class EconomyCommandModule : ApplicationCommandModule<ApplicationCommandC
 		{
 			Content = $":money_with_wings: {balance}",
 			Flags = MessageFlags.Ephemeral
+		};
+	}
+
+	[SlashCommand("beg", "Beg for a random amount of money")]
+	public async Task<InteractionMessageProperties> BegAsync()
+	{
+		var result = await _economyService.BegAsync(Context.User.Id);
+
+		_logger.LogInformation("/beg requested by {GlobalName}: Result = {Status}, Amount = {Amount}", Context.User.GlobalName, result.Status, result.Amount);
+
+		return result.Status switch
+		{
+			BegResultStatus.Success => new InteractionMessageProperties().WithEmbeds
+			([
+				EconomyMessageBuilder.CreateBegSuccessEmbed(Context.User.Id, result.Amount, result.NextAvailableAtUtc)
+			]),
+
+			BegResultStatus.CooldownActive => new InteractionMessageProperties
+			{
+				Flags = MessageFlags.Ephemeral,
+				Content = $":exclamation: You can use `/beg` again <t:{result.NextAvailableAtUtc.ToUnixTimeSeconds()}:R>"
+			},
+
+			BegResultStatus.BalanceTooHigh => new InteractionMessageProperties
+			{
+				Flags = MessageFlags.Ephemeral,
+				Content = result.MaxAllowedBalance.HasValue 
+					? $":exclamation: The maximum allowed balance to use `/beg` is {result.MaxAllowedBalance}." 
+					: ":exclamation: You have too much money to beg."
+			},
+			_ => throw new Exception($"Unexpected BegResultStatus: {result.Status}")
 		};
 	}
 

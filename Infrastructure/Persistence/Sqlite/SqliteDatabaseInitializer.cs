@@ -20,7 +20,8 @@ public class SqliteDatabaseInitializer
 			(
 				UserId INTEGER PRIMARY KEY,
 				Balance INTEGER NOT NULL,
-				PeakBalance INTEGER NOT NULL DEFAULT 200
+				PeakBalance INTEGER NOT NULL DEFAULT 200,
+				BegCooldownUntilUtc TEXT NULL
 			);
 
 			CREATE TABLE IF NOT EXISTS RouletteGames

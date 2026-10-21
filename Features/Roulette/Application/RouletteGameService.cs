@@ -35,7 +35,7 @@ public class RouletteGameService
 		try
 		{
 			var gameId = await _rouletteGameRepository.GetNextGameIdAsync();
-			game = new RouletteGame(gameId, DateTimeOffset.UtcNow.AddSeconds(32));
+			game = new RouletteGame(gameId, DateTimeOffset.UtcNow.AddSeconds(30));
 			_activeGame = game;
 		}
 		finally

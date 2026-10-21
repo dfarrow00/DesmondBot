@@ -41,6 +41,7 @@ builder.Services.AddSingleton<RouletteGameService>();
 builder.Services.AddSingleton<IRouletteMessageService, RouletteMessageService>();
 builder.Services.AddSingleton<IRouletteGameRepository, SqliteRouletteGameRepository>();
 builder.Services.AddSingleton<IEconomyRepository, SqliteEconomyRepository>();
+builder.Services.AddSingleton<EconomyService>();
 builder.Services.AddHostedService<DailyBalanceResetService>();
 
 var host = builder.Build();

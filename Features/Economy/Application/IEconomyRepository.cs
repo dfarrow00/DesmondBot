@@ -10,6 +10,8 @@ public interface IEconomyRepository
 
 	Task<int> GetBalanceAsync(ulong userId);
 	Task<EconomyLeaderboard> GetLeaderboardAsync();
+	Task<DateTimeOffset> GetBegCooldownTimeAsync(ulong userId);
+	Task SetBegCooldownTimeAsync(ulong userId, DateTimeOffset cooldownUntilUtc);
 
 	Task<bool> TryRemoveBalanceAsync(ulong userId, int amount);
 	Task<bool> TryTransferBalanceAsync(ulong senderId, ulong recipientId, int amount);

@@ -129,6 +129,47 @@ public class SqliteEconomyRepository : IEconomyRepository
 		return leaderboard;
 	}
 
+	public async Task<DateTimeOffset> GetBegCooldownTimeAsync(ulong userId)
+	{
+		await using var connection = _connectionFactory.CreateConnection();
+		await connection.OpenAsync();
+
+		await using var command = connection.CreateCommand();
+		command.CommandText = @"
+			SELECT BegCooldownUntilUtc
+			FROM UserBalances
+			WHERE UserId = @userId;
+			";
+
+		command.Parameters.AddWithValue("@userId", userId);
+
+		var result = await command.ExecuteScalarAsync();
+		if (result is null or DBNull)
+		{
+			return DateTimeOffset.MinValue;
+		}
+
+		return DateTimeOffset.Parse((string)result);
+	}
+
+	public async Task SetBegCooldownTimeAsync(ulong userId, DateTimeOffset cooldownUntilUtc)
+	{
+		await using var connection = _connectionFactory.CreateConnection();
+		await connection.OpenAsync();
+
+		await using var command = connection.CreateCommand();
+		command.CommandText = @"
+			UPDATE UserBalances
+			SET BegCooldownUntilUtc = @cooldownUntilUtc
+			WHERE UserId = @userId
+			";
+
+		command.Parameters.AddWithValue("@userId", userId);
+		command.Parameters.AddWithValue("@cooldownUntilUtc", cooldownUntilUtc.ToString("O"));
+
+		await command.ExecuteNonQueryAsync();
+	}
+
 	public async Task<bool> TryRemoveBalanceAsync(ulong userId, int amount)
 	{
 		await using var connection = _connectionFactory.CreateConnection();

@@ -30,6 +30,17 @@ public static class EconomyMessageBuilder
 		};
 	}
 
+	public static EmbedProperties CreateBegSuccessEmbed(ulong userId, int amount, DateTimeOffset nextAvailableAtUtc)
+	{
+		return new EmbedProperties
+		{
+			Title = ":pray: Beg Result",
+			Description = $"<@{userId}> begged for money and received :money_with_wings: **{amount}**\n\n" + 
+				$"You can use `/beg` again at <t:{nextAvailableAtUtc.ToUnixTimeSeconds()}:t>",
+			Color = new Color(0x57F287)
+		};
+	}
+
 	private static string CreateLeaderboardEntries(IReadOnlyList<LeaderboardEntry> entries, Func<int, string> formatValue)
 	{
 		return entries.Count == 0
