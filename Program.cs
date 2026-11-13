@@ -15,13 +15,14 @@ using NetCord.Gateway;
 
 var builder = Host.CreateApplicationBuilder(args);
 
+Console.WriteLine($"Starting DesmondBot in {builder.Environment.EnvironmentName} environment.");
+
 builder.Services.AddSerilog((services, loggerConfiguration) => loggerConfiguration
 	.ReadFrom.Configuration(builder.Configuration)
 	.ReadFrom.Services(services)
 	.Enrich.FromLogContext());
 
 var token = builder.Configuration["Discord:Token"] ?? throw new InvalidOperationException("Discord bot token not found in configuration");
-var databasePath = Path.Combine(builder.Environment.ContentRootPath,"Data","desmond.db");
 
 builder.Services.AddDiscordGateway(options =>
 {
@@ -33,8 +34,7 @@ builder.Services.AddDiscordGateway(options =>
 .AddComponentInteractions<ModalInteraction, ModalInteractionContext>()
 .AddGatewayHandlers(typeof(Program).Assembly);
 
-builder.Services.AddSingleton(provider =>
-	new SqliteConnectionFactory(databasePath, provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SqliteConnectionFactory>>()));
+builder.Services.AddSingleton<SqliteConnectionFactory>();
 builder.Services.AddSingleton<SqliteDatabaseInitializer>();
 
 builder.Services.AddSingleton<RouletteGameService>();
@@ -43,6 +43,7 @@ builder.Services.AddSingleton<IRouletteGameRepository, SqliteRouletteGameReposit
 builder.Services.AddSingleton<IEconomyRepository, SqliteEconomyRepository>();
 builder.Services.AddSingleton<EconomyService>();
 builder.Services.AddHostedService<DailyBalanceResetService>();
+builder.Services.AddHostedService<SqliteBackupService>();
 
 var host = builder.Build();
 

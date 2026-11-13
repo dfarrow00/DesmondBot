@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace DesmondBot.Infrastructure.Persistence.Sqlite;
@@ -8,10 +9,11 @@ public class SqliteConnectionFactory
 	private readonly string _connectionString;
 	private readonly ILogger<SqliteConnectionFactory> _logger;
 
-	public SqliteConnectionFactory(string databasePath, ILogger<SqliteConnectionFactory> logger)
+	public SqliteConnectionFactory(IConfiguration config, ILogger<SqliteConnectionFactory> logger)
 	{
 		_logger = logger;
 
+		var databasePath = config.GetValue<string>("Database:Path") ?? throw new InvalidOperationException("Database path not found in configuration");
 		var directoryPath = Path.GetDirectoryName(databasePath);
 		if (string.IsNullOrWhiteSpace(directoryPath) == false && Directory.Exists(directoryPath) == false)
 		{
